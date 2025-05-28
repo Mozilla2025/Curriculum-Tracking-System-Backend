@@ -1,6 +1,6 @@
 package com.mozilla.curriculum_tracking_system.security;
 
-import com.mozilla.curriculum_tracking_system.model.User;
+import com.mozilla.curriculum_tracking_system.model.user.User;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

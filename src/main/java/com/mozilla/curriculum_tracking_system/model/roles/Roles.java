@@ -1,5 +1,6 @@
-package com.mozilla.curriculum_tracking_system.model;
+package com.mozilla.curriculum_tracking_system.model.roles;
 
+import com.mozilla.curriculum_tracking_system.model.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

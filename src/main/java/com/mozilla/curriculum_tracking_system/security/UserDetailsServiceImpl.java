@@ -1,7 +1,7 @@
 package com.mozilla.curriculum_tracking_system.security;
 
-import com.mozilla.curriculum_tracking_system.model.User;
-import com.mozilla.curriculum_tracking_system.repository.UserRepository;
+import com.mozilla.curriculum_tracking_system.model.user.User;
+import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;

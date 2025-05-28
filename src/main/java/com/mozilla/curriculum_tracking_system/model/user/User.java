@@ -1,5 +1,6 @@
-package com.mozilla.curriculum_tracking_system.model;
+package com.mozilla.curriculum_tracking_system.model.user;
 
+import com.mozilla.curriculum_tracking_system.model.roles.Roles;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
