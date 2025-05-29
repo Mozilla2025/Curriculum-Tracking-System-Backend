@@ -3,6 +3,7 @@ package com.mozilla.curriculum_tracking_system.model.roles;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -15,6 +16,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "roles")
+@Builder
 @Entity
 public class Roles {
 
@@ -33,6 +35,6 @@ public class Roles {
 
     @CreationTimestamp
     @Column(name = "created_at")
-    private LocalDateTime created_at; //essential??
+    private LocalDateTime created_at;
 
 }
