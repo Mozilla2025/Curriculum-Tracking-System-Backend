@@ -10,7 +10,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @NoArgsConstructor
@@ -42,7 +41,7 @@ public class User implements UserDetails {
     private String last_name;
 
     @Column(name = "phone_number", length = 20)
-    private int phone_number;
+    private String phone_number;
 
     private boolean isAccountNonExpired = true;
 

@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -22,9 +23,11 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -54,13 +57,38 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.cors(cors -> cors.configurationSource(configurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-                .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(jwtAuthenticationEntryPoint))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptionHandling -> 
+                    exceptionHandling.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                .sessionManagement(session -> 
+                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/api/v1/auth/**").permitAll()
+                        auth
+                                // Public endpoints - only login is public
+                                .requestMatchers("/api/v1/auth/login").permitAll()
                                 .requestMatchers("/actuator/health").permitAll()
+                                
+                                // Admin-only endpoints - user management
+                                .requestMatchers("/api/v1/auth/register").hasRole("ADMIN")
+                                .requestMatchers("/api/v1/users/create").hasRole("ADMIN")
+                                .requestMatchers("/api/v1/users/assign-role").hasRole("ADMIN")
+                                .requestMatchers("/api/v1/users/admin/**").hasRole("ADMIN")
+                                
+                                // Role-specific endpoints
+                                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                                .requestMatchers("/api/v1/vice-chancellor/**").hasAnyRole("ADMIN", "VICE_CHANCELLOR")
+                                .requestMatchers("/api/v1/dean/**").hasAnyRole("ADMIN", "VICE_CHANCELLOR", "DEAN")
+                                .requestMatchers("/api/v1/board/**").hasAnyRole("ADMIN", "VICE_CHANCELLOR", "BOARD_MEMBER")
+                                .requestMatchers("/api/v1/department/**").hasAnyRole("ADMIN", "DEAN", "DEPARTMENT_MEMBER")
+                                
+                                // General authenticated endpoints
+                                .requestMatchers("/api/v1/auth/refresh").authenticated()
+                                .requestMatchers("/api/v1/auth/logout").authenticated()
+                                .requestMatchers("/api/v1/profile/**").authenticated()
+                                
+                                // All other requests require authentication
                                 .anyRequest().authenticated()
                 );
+        
         httpSecurity.authenticationProvider(authenticationProvider());
         httpSecurity.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -70,10 +98,23 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource configurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.setAllowedOriginPatterns(Arrays.asList("*"));
-        corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        corsConfiguration.setAllowedHeaders(Arrays.asList("*"));
+        
+        corsConfiguration.setAllowedOriginPatterns(List.of(
+            "http://localhost:3000",
+            "http://localhost:4200",
+            "https://must.ac.ke"
+        ));
+        
+        corsConfiguration.setAllowedMethods(Arrays.asList(
+            "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
+        ));
+        
+        corsConfiguration.setAllowedHeaders(Arrays.asList(
+            "Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"
+        ));
+        
         corsConfiguration.setAllowCredentials(true);
+        corsConfiguration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfiguration);

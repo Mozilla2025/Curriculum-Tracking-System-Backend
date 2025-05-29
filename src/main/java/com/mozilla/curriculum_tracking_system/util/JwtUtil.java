@@ -11,8 +11,10 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -38,6 +40,17 @@ public class JwtUtil {
         if (userDetails instanceof com.mozilla.curriculum_tracking_system.model.user.User user) {
             claims.put("userId", user.getId());
             claims.put("email", user.getEmail());
+            claims.put("firstName", user.getFirst_name());
+            claims.put("lastName", user.getLast_name());
+
+            List<String> roleNames = user.getRoles().stream()
+            .map(role -> role.getName())
+            .collect(Collectors.toList());
+            claims.put("roles", roleNames);
+
+            claims.put("isAdmin", roleNames.contains("ADMIN"));
+            claims.put("isDean", roleNames.contains("DEAN"));
+            claims.put("isViceChancellor", roleNames.contains("VICE_CHANCELLOR"));
         }
 
         return createToken(claims, userDetails.getUsername(), jwtExpirationMs);
@@ -79,6 +92,32 @@ public class JwtUtil {
 
     public String getEmailFromToken(String token) {
         return getClaimsFromToken(token, claims -> (String) claims.get("email"));
+    }
+
+    
+    @SuppressWarnings("unchecked")
+    public List<String> getRolesFromToken(String token) {
+        return getClaimsFromToken(token, claims -> (List<String>) claims.get("roles"));
+    }
+
+    public Boolean isAdminFromToken(String token) {
+        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isAdmin"));
+    }
+
+    public Boolean isDeanFromToken(String token) {
+        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isDean"));
+    }
+
+    public Boolean isViceChancellorFromToken(String token) {
+        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isViceChancellor"));
+    }
+
+    public String getFirstNameFromToken(String token) {
+        return getClaimsFromToken(token, claims -> (String) claims.get("firstName"));
+    }
+
+    public String getLastNameFromToken(String token) {
+        return getClaimsFromToken(token, claims -> (String) claims.get("lastName"));
     }
 
     public Date getExpirationDateFromToken(String token) {
@@ -131,6 +170,33 @@ public class JwtUtil {
             log.error("JWT validation error: {}", e.getMessage());
         }
         return false;
+    }
+
+    public Boolean hasRole(String token, String roleName) {
+        try {
+            List<String> roles = getRolesFromToken(token);
+            return roles != null && roles.contains(roleName);
+        } catch (Exception e) {
+            log.error("Error checking role from token: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    public Boolean hasAnyRole(String token, String... roleNames) {
+        try {
+            List<String> userRoles = getRolesFromToken(token);
+            if (userRoles == null) return false;
+            
+            for (String roleName : roleNames) {
+                if (userRoles.contains(roleName)) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("Error checking roles from token: {}", e.getMessage());
+            return false;
+        }
     }
 
     public Long getJwtRefreshExpirationMs() {
