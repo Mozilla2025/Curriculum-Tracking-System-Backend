@@ -1,8 +1,10 @@
 package com.mozilla.curriculum_tracking_system.util;
 
-import com.mozilla.curriculum_tracking_system.exception.CustomException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import com.mozilla.curriculum_tracking_system.exception.CustomException;
+
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
