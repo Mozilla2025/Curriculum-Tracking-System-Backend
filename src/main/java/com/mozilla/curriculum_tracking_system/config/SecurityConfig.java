@@ -102,7 +102,7 @@ public class SecurityConfig {
         corsConfiguration.setAllowedOriginPatterns(List.of(
             "http://localhost:3000",
             "http://localhost:4200",
-            "https://must.ac.ke"
+            "https://must.ac.ke"  
         ));
         
         corsConfiguration.setAllowedMethods(Arrays.asList(

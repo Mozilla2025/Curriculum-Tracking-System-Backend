@@ -14,9 +14,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String usernameOrEMail) throws UsernameNotFoundException {
-        return userRepository.findByUsernameOrEmail(usernameOrEMail, usernameOrEMail)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + usernameOrEMail));
+    @Transactional
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email"));
     }
 
     @Transactional

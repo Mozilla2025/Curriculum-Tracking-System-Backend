@@ -7,7 +7,7 @@ import com.mozilla.curriculum_tracking_system.dto.user.UserResponse;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
 import com.mozilla.curriculum_tracking_system.mapper.UserMapper;
-import com.mozilla.curriculum_tracking_system.model.roles.Roles;
+import com.mozilla.curriculum_tracking_system.model.roles.Role;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.roles.RoleRepository;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
@@ -17,11 +17,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class UserManagementService implements IUserManagementService {
 
     private final UserRepository userRepository;
@@ -30,6 +31,7 @@ public class UserManagementService implements IUserManagementService {
     private final UserMapper userMapper;
 
     @Override
+    @Transactional
     public UserResponse createUser(CreateUserRequest request) {
         validateCreateUserRequest(request);
 
@@ -39,7 +41,7 @@ public class UserManagementService implements IUserManagementService {
             User user = userMapper.toEntity(request, passwordEncoder.encode(request.getPassword()));
 
             if (request.getRoleName() != null && !request.getRoleName().trim().isEmpty()) {
-                Roles role = findRoleByName(request.getRoleName());
+                Role role = findRoleByName(request.getRoleName());
                 user.getRoles().add(role);
             }
 
@@ -53,12 +55,13 @@ public class UserManagementService implements IUserManagementService {
     }
 
     @Override
+    @Transactional
     public UserResponse assignRole(AssignRoleRequest request) {
         validateAssignRoleRequest(request);
 
         try {
             User user = findUserById(request.getUserId());
-            Roles role = findRoleByName(request.getRoleName());
+            Role role = findRoleByName(request.getRoleName());
             boolean userHasRole = user.getRoles().stream()
                     .anyMatch(existingRole -> existingRole.getName().equals(request.getRoleName()));
 
@@ -78,6 +81,7 @@ public class UserManagementService implements IUserManagementService {
     }
 
     @Override
+    @Transactional
     public UserResponse removeRole(Long userId, String roleName) {
         if (userId == null) {
             throw new BadRequestException("User ID is required");
@@ -88,7 +92,9 @@ public class UserManagementService implements IUserManagementService {
 
         try {
             User user = findUserById(userId);
-            boolean userHasRole = user.getRoles().stream()
+
+            Set<Role> currentRoles = new HashSet<>(user.getRoles());
+            boolean userHasRole = currentRoles.stream()
                     .anyMatch(role -> role.getName().equals(roleName));
 
             if (!userHasRole) {
@@ -97,10 +103,18 @@ public class UserManagementService implements IUserManagementService {
 
             validateAdminRoleRemoval(roleName, user);
 
-            user.getRoles().removeIf(role -> role.getName().equals(roleName));
-            User savedUser = userRepository.save(user);
+            Role roleToRemove = currentRoles.stream()
+                    .filter(role -> role.getName().equals(roleName))
+                    .findFirst()
+                    .orElse(null);
 
+            if (roleToRemove != null) {
+                user.getRoles().remove(roleToRemove);
+            }
+
+            User savedUser = userRepository.save(user);
             return userMapper.toResponse(savedUser);
+
         } catch (BadRequestException | ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -147,6 +161,7 @@ public class UserManagementService implements IUserManagementService {
     }
 
     @Override
+    @Transactional
     public UserResponse updateUserStatus(Long userId, boolean enabled) {
         if (userId == null) {
             throw new BadRequestException("User ID is required");
@@ -169,6 +184,7 @@ public class UserManagementService implements IUserManagementService {
     }
 
     @Override
+    @Transactional
     public void deleteUser(Long userId) {
         if (userId == null) {
             throw new BadRequestException("User ID is required");
@@ -234,7 +250,7 @@ public class UserManagementService implements IUserManagementService {
                 });
     }
 
-    private Roles findRoleByName(String roleName) {
+    private Role findRoleByName(String roleName) {
         return roleRepository.findByName(roleName)
                 .orElseThrow(() -> {
                     return new ResourceNotFoundException("Role not found: " + roleName);

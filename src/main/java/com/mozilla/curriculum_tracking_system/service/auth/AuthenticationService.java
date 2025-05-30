@@ -8,39 +8,48 @@ import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import com.mozilla.curriculum_tracking_system.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class AuthenticationService implements IAuthenticationService {
-    
+
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
-    
+    private final AuthenticationManager authenticationManager;
+
     @Override
+    @Transactional
     public LoginResponse login(LoginRequest request) {
+
+        validateLoginRequest(request);
+
         try {
-            User user = findUserByUsername(request.getUsername());
-            
+            Authentication authentication = authenticateUser(request);
+            User user = (User) authentication.getPrincipal();
+
             validateUserAccount(user);
-            
+
             String accessToken = jwtUtil.generateAccessToken(user);
             String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
-            
+
             Set<String> roles = user.getRoles().stream()
                     .map(role -> role.getName())
                     .collect(Collectors.toSet());
-            
-            
+
             return LoginResponse.builder()
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
@@ -49,56 +58,79 @@ public class AuthenticationService implements IAuthenticationService {
                     .userId(user.getId())
                     .username(user.getUsername())
                     .email(user.getEmail())
-                    .firstName(user.getFirst_name())
-                    .lastName(user.getLast_name())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
                     .roles(roles)
                     .build();
-                    
+
         } catch (BadCredentialsException e) {
             throw new BadRequestException("Invalid username or password");
         } catch (DisabledException e) {
             throw new BadRequestException("Account is disabled");
         } catch (AuthenticationException e) {
             throw new BadRequestException("Authentication failed: " + e.getMessage());
-        }
+        } 
     }
-    
+
     @Override
+    @Transactional
     public LoginResponse refreshToken(String refreshToken) {
         try {
+            if (!StringUtils.hasText(refreshToken)) {
+                throw new BadRequestException("Refresh token is required");
+            }
+
             if (!jwtUtil.validateToken(refreshToken)) {
                 throw new BadRequestException("Invalid or expired refresh token");
             }
-            
+
             String username = jwtUtil.getUsernameFromToken(refreshToken);
             User user = findUserByUsername(username);
-            
+
             validateUserAccount(user);
-            
+
             String newAccessToken = jwtUtil.generateAccessToken(user);
-            
+
             Set<String> roles = user.getRoles().stream()
                     .map(role -> role.getName())
                     .collect(Collectors.toSet());
-            
+
             return LoginResponse.builder()
                     .accessToken(newAccessToken)
-                    .refreshToken(refreshToken) 
+                    .refreshToken(refreshToken)
                     .tokenType("Bearer")
                     .expiresIn(jwtUtil.getJwtRefreshExpirationMs())
                     .userId(user.getId())
                     .username(user.getUsername())
                     .email(user.getEmail())
-                    .firstName(user.getFirst_name())
-                    .lastName(user.getLast_name())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
                     .roles(roles)
                     .build();
-                    
+
         } catch (Exception e) {
             throw new BadRequestException("Failed to refresh token: " + e.getMessage());
         }
     }
-    
+
+    private void validateLoginRequest(LoginRequest request) {
+        Optional.ofNullable(request)
+                .filter(r -> StringUtils.hasText(r.getUsername()))
+                .filter(r -> StringUtils.hasText(r.getPassword()))
+                .orElseThrow(() -> new IllegalArgumentException("Username and password are required"));
+    }
+
+    private Authentication authenticateUser(LoginRequest request) {
+        try {
+            return authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(),
+                            request.getPassword()));
+        } catch (AuthenticationException e) {
+            throw e;
+        }
+    }
+
     @Override
     public boolean validateToken(String token) {
         try {
@@ -107,7 +139,7 @@ public class AuthenticationService implements IAuthenticationService {
             return false;
         }
     }
-    
+
     @Override
     public String getUsernameFromToken(String token) {
         try {
@@ -116,7 +148,7 @@ public class AuthenticationService implements IAuthenticationService {
             throw new BadRequestException("Invalid token");
         }
     }
-    
+
     @Override
     public Long getUserIdFromToken(String token) {
         try {
@@ -125,7 +157,7 @@ public class AuthenticationService implements IAuthenticationService {
             throw new BadRequestException("Invalid token");
         }
     }
-    
+
     @Override
     public String getEmailFromToken(String token) {
         try {
@@ -134,7 +166,7 @@ public class AuthenticationService implements IAuthenticationService {
             throw new BadRequestException("Invalid token");
         }
     }
-    
+
     @Override
     public String getFirstNameFromToken(String token) {
         try {
@@ -143,7 +175,7 @@ public class AuthenticationService implements IAuthenticationService {
             throw new BadRequestException("Invalid token");
         }
     }
-    
+
     @Override
     public String getLastNameFromToken(String token) {
         try {
@@ -152,7 +184,7 @@ public class AuthenticationService implements IAuthenticationService {
             throw new BadRequestException("Invalid token");
         }
     }
-    
+
     @Override
     public List<String> getRolesFromToken(String token) {
         try {
@@ -161,7 +193,7 @@ public class AuthenticationService implements IAuthenticationService {
             throw new BadRequestException("Invalid token");
         }
     }
-    
+
     @Override
     public boolean hasRole(String token, String roleName) {
         try {
@@ -170,7 +202,7 @@ public class AuthenticationService implements IAuthenticationService {
             return false;
         }
     }
-    
+
     @Override
     public boolean hasAnyRole(String token, String... roleNames) {
         try {
@@ -179,7 +211,7 @@ public class AuthenticationService implements IAuthenticationService {
             return false;
         }
     }
-    
+
     @Override
     public boolean isAdmin(String token) {
         try {
@@ -189,7 +221,7 @@ public class AuthenticationService implements IAuthenticationService {
             return false;
         }
     }
-    
+
     @Override
     public boolean isDean(String token) {
         try {
@@ -199,7 +231,7 @@ public class AuthenticationService implements IAuthenticationService {
             return false;
         }
     }
-    
+
     @Override
     public boolean isViceChancellor(String token) {
         try {
@@ -209,25 +241,25 @@ public class AuthenticationService implements IAuthenticationService {
             return false;
         }
     }
-    
+
     private User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
     }
-    
+
     private void validateUserAccount(User user) {
         if (!user.isEnabled()) {
             throw new BadRequestException("Account is disabled");
         }
-        
+
         if (!user.isAccountNonExpired()) {
             throw new BadRequestException("Account has expired");
         }
-        
+
         if (!user.isAccountNonLocked()) {
             throw new BadRequestException("Account is locked");
         }
-        
+
         if (!user.isCredentialsNonExpired()) {
             throw new BadRequestException("Credentials have expired");
         }

@@ -1,7 +1,7 @@
 package com.mozilla.curriculum_tracking_system.config;
 
 import com.mozilla.curriculum_tracking_system.constants.RoleConstants;
-import com.mozilla.curriculum_tracking_system.model.roles.Roles;
+import com.mozilla.curriculum_tracking_system.model.roles.Role;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.roles.RoleRepository;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
@@ -57,7 +57,7 @@ public class DataInitializationService implements CommandLineRunner {
     
     private void createRoleIfNotExists(String roleName, String description) {
         if (!roleRepository.existsByName(roleName)) {
-            Roles role = Roles.builder()
+            Role role = Role.builder()
                     .name(roleName)
                     .description(description)
                     .build();
@@ -71,22 +71,21 @@ public class DataInitializationService implements CommandLineRunner {
     private void initializeDefaultAdmin() {
         log.info("Checking for default admin user...");
         
-        // Check if any admin user exists
         long adminCount = userRepository.countUsersWithRole(RoleConstants.ADMIN);
         
         if (adminCount == 0) {
             log.info("No admin user found. Creating default admin user...");
             
-            Roles adminRole = roleRepository.findByName(RoleConstants.ADMIN)
+            Role adminRole = roleRepository.findByName(RoleConstants.ADMIN)
                     .orElseThrow(() -> new RuntimeException("Admin role not found"));
             
             User adminUser = User.builder()
                     .username(defaultAdminUsername)
                     .email(defaultAdminEmail)
                     .password(passwordEncoder.encode(defaultAdminPassword))
-                    .first_name("System")
-                    .last_name("Administrator")
-                    .phone_number("")
+                    .firstName("System")
+                    .lastName("Administrator")
+                    .phoneNumber("")
                     .isEnabled(true)
                     .isAccountNonExpired(true)
                     .isAccountNonLocked(true)
