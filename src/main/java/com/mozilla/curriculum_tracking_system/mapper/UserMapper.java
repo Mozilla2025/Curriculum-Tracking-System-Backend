@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 import com.mozilla.curriculum_tracking_system.dto.user.CreateUserRequest;
 import com.mozilla.curriculum_tracking_system.dto.user.UserResponse;
-import com.mozilla.curriculum_tracking_system.model.roles.Roles;
+import com.mozilla.curriculum_tracking_system.model.roles.Role;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 
 @Component
@@ -19,9 +19,9 @@ public class UserMapper {
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(encodedPassword)
-                .first_name(request.getFirstName())
-                .last_name(request.getLastName())
-                .phone_number(request.getPhoneNumber())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .phoneNumber(request.getPhoneNumber())
                 .isEnabled(true)
                 .isAccountNonExpired(true)
                 .isAccountNonLocked(true)
@@ -39,13 +39,13 @@ public class UserMapper {
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .firstName(user.getFirst_name())
-                .lastName(user.getLast_name())
-                .phoneNumber(user.getPhone_number())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .phoneNumber(user.getPhoneNumber())
                 .enabled(user.isEnabled())
                 .roles(mapRolesToNames(user.getRoles()))
-                .createdAt(user.getCreated_at())
-                .updatedAt(user.getUpdated_at())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
                 .build();
     }
 
@@ -65,9 +65,9 @@ public class UserMapper {
      * @param roles set of role entities
      * @return set of role names
      */
-    private Set<String> mapRolesToNames(Set<Roles> roles) {
+    private Set<String> mapRolesToNames(Set<Role> roles) {
         return roles.stream()
-                .map(Roles::getName)
+                .map(Role::getName)
                 .collect(Collectors.toSet());
     }
 }

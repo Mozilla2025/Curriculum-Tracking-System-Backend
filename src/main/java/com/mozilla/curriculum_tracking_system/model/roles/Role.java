@@ -1,12 +1,12 @@
 package com.mozilla.curriculum_tracking_system.model.roles;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -18,7 +18,7 @@ import java.util.Set;
 @Table(name = "roles")
 @Builder
 @Entity
-public class Roles {
+public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,11 +30,25 @@ public class Roles {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @ManyToMany(mappedBy = "roles")
-    private Set<User> user = new HashSet<>();
+    @JsonIgnore 
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    @Builder.Default
+    private Set<User> users = new HashSet<>();
 
-    @CreationTimestamp
-    @Column(name = "created_at")
-    private LocalDateTime created_at;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

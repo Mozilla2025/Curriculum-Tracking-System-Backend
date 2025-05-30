@@ -40,8 +40,8 @@ public class JwtUtil {
         if (userDetails instanceof com.mozilla.curriculum_tracking_system.model.user.User user) {
             claims.put("userId", user.getId());
             claims.put("email", user.getEmail());
-            claims.put("firstName", user.getFirst_name());
-            claims.put("lastName", user.getLast_name());
+            claims.put("firstName", user.getFirstName());
+            claims.put("lastName", user.getLastName());
 
             List<String> roleNames = user.getRoles().stream()
             .map(role -> role.getName())

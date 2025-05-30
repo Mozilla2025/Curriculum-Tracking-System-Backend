@@ -5,12 +5,13 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.mozilla.curriculum_tracking_system.model.roles.Roles;
+import com.mozilla.curriculum_tracking_system.model.roles.Role;
+
 
 @Repository
-public interface RoleRepository extends JpaRepository<Roles, Long> {
+public interface RoleRepository extends JpaRepository<Role, Long> {
 
-    Optional<Roles> findByName(String name);
+    Optional<Role> findByName(String name);
 
     boolean existsByName(String name);
 }

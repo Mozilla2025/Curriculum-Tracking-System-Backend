@@ -1,21 +1,27 @@
 package com.mozilla.curriculum_tracking_system.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.mozilla.curriculum_tracking_system.model.roles.Roles;
+import com.mozilla.curriculum_tracking_system.model.roles.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Entity
+@NamedEntityGraph(
+    name = "User.roles",
+    attributeNodes = @NamedAttributeNode("roles")
+)
 @Builder
 @Table(name = "users")
 public class User implements UserDetails {
@@ -35,51 +41,58 @@ public class User implements UserDetails {
     private String password;
 
     @Column(name = "first_name", nullable = false, length = 50)
-    private String first_name;
+    private String firstName;
 
     @Column(name = "last_name", nullable = false, length = 50)
-    private String last_name;
+    private String lastName;
 
     @Column(name = "phone_number", length = 20)
-    private String phone_number;
+    private String phoneNumber;
 
+    @Builder.Default
     private boolean isAccountNonExpired = true;
 
+    @Builder.Default
     private boolean isAccountNonLocked = true;
 
+    @Builder.Default
     private boolean isCredentialsNonExpired = true;
 
+    @Builder.Default
     private boolean isEnabled = true;
 
-    @Column(name = "created_at")
-    private LocalDateTime created_at;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updated_at;
+    private LocalDateTime updatedAt;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
+            inverseJoinColumns = @JoinColumn(name = "role_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "role_id"})
     )
-    private Set<Roles> roles = new HashSet<>();
+    @Builder.Default
+    private Set<Role> roles = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {
-        this.created_at = LocalDateTime.now();
-        this.updated_at = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updated_at = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles.stream().map(role -> (GrantedAuthority) role::getName).toList();
+        return this.roles.stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName().toUpperCase()))
+                .collect(Collectors.toSet());
     }
 
     @Override
