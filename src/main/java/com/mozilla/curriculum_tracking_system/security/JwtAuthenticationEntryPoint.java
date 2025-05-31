@@ -1,6 +1,8 @@
 package com.mozilla.curriculum_tracking_system.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mozilla.curriculum_tracking_system.response.ApiResponse;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,8 +12,6 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
@@ -19,19 +19,17 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     public void commence(
             HttpServletRequest request,
             HttpServletResponse response,
-                    AuthenticationException authException)
-            throws IOException, ServletException {
+            AuthenticationException authException) throws IOException, ServletException {
+    
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-
-        final Map<String, Object> body = new HashMap<>();
-        body.put("success", false);
-        body.put("message", "Unauthorized access - Please provide valid authentication credentials");
-        body.put("error", "Unauthorized");
-        body.put("path", request.getServletPath());
-        body.put("timestamp", System.currentTimeMillis());
-
-        final ObjectMapper mapper = new ObjectMapper();
+    
+        ApiResponse body = new ApiResponse();
+        body.setMessage("Unauthorized access - Please provide valid authentication credentials");
+        body.setData(null);
+    
+        ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(response.getOutputStream(), body);
     }
+    
 }

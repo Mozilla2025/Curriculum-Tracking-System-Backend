@@ -43,7 +43,7 @@ public class UserController {
         return ResponseEntity.ok(new ApiResponse("Successfully assigned role to user", response));
     }
 
-    @DeleteMapping("/{userId}/roles/{roleName}")
+    @DeleteMapping("/{userId}/roles/{roleName}/delete")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> removeRole(
             @PathVariable Long userId, 
@@ -52,14 +52,14 @@ public class UserController {
         return ResponseEntity.ok(new ApiResponse("Successfully removed user role", response));
     }
     
-    @GetMapping
+    @GetMapping("/get-all-users")
     @PreAuthorize("hasRole('ADMIN') or hasRole('VICE_CHANCELLOR')")
     public ResponseEntity<ApiResponse> getAllUsers() {
         List<UserResponse> users = userManagementService.getAllUsers();
         return ResponseEntity.ok(new ApiResponse("Successfully retrieved users", users));
     }
     
-    @GetMapping("/{userId}")
+    @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('VICE_CHANCELLOR') or @userManagementService.isCurrentUser(#userId)")
     public ResponseEntity<ApiResponse> getUserById(@PathVariable Long userId) {
         UserResponse user = userManagementService.getUserById(userId);
