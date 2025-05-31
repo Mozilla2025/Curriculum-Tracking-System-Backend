@@ -18,12 +18,14 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @Data
 @Entity
-@NamedEntityGraph(
-    name = "User.roles",
-    attributeNodes = @NamedAttributeNode("roles")
-)
 @Builder
 @Table(name = "users")
+@EqualsAndHashCode(exclude = { "roles" })
+@ToString(exclude = { "roles" })
+@NamedEntityGraphs({
+        @NamedEntityGraph(name = "User.withRoles", attributeNodes = @NamedAttributeNode("roles")),
+        @NamedEntityGraph(name = "User.withRolesDetailed", attributeNodes = @NamedAttributeNode(value = "roles", subgraph = "roles"), subgraphs = @NamedSubgraph(name = "roles", attributeNodes = @NamedAttributeNode("name")))
+})
 public class User implements UserDetails {
 
     @Id
@@ -67,11 +69,11 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
     @JoinTable(
             name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id"),
+            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"),
             uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "role_id"})
     )
     @Builder.Default
@@ -86,6 +88,23 @@ public class User implements UserDetails {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void addRole(Role role) {
+        this.roles.add(role);
+        role.getUsers().add(this);
+    }
+
+    public void removeRole(Role role) {
+        this.roles.remove(role);
+        role.getUsers().remove(this);
+    }
+
+    public void clearRoles() {
+        Set<Role> rolesToRemove = new HashSet<>(this.roles);
+        for (Role role : rolesToRemove) {
+            removeRole(role);
+        }
     }
 
     @Override

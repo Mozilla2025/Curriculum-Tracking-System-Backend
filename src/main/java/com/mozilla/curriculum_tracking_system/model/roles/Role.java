@@ -6,7 +6,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -18,6 +20,8 @@ import java.util.Set;
 @Table(name = "roles")
 @Builder
 @Entity
+@EqualsAndHashCode(exclude = {"users"})
+@ToString(exclude = {"users"}) 
 public class Role {
 
     @Id
@@ -31,7 +35,7 @@ public class Role {
     private String description;
 
     @JsonIgnore 
-    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @Builder.Default
     private Set<User> users = new HashSet<>();
 
@@ -50,5 +54,15 @@ public class Role {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void addUser(User user) {
+        this.users.add(user);
+        user.getRoles().add(this);
+    }
+
+    public void removeUser(User user) {
+        this.users.remove(user);
+        user.getRoles().remove(this);
     }
 }

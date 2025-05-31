@@ -13,13 +13,14 @@ import com.mozilla.curriculum_tracking_system.repository.roles.RoleRepository;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +43,7 @@ public class UserManagementService implements IUserManagementService {
 
             if (request.getRoleName() != null && !request.getRoleName().trim().isEmpty()) {
                 Role role = findRoleByName(request.getRoleName());
-                user.getRoles().add(role);
+                user.addRole(role);
             }
 
             User savedUser = userRepository.save(user);
@@ -69,8 +70,8 @@ public class UserManagementService implements IUserManagementService {
                 throw new BadRequestException("User already has the role: " + request.getRoleName());
             }
 
-            user.getRoles().add(role);
-            User savedUser = userRepository.save(user);
+            user.addRole(role);
+            User savedUser = userRepository.saveAndFlush(user);
 
             return userMapper.toResponse(savedUser);
         } catch (BadRequestException | ResourceNotFoundException e) {
@@ -93,25 +94,16 @@ public class UserManagementService implements IUserManagementService {
         try {
             User user = findUserById(userId);
 
-            Set<Role> currentRoles = new HashSet<>(user.getRoles());
-            boolean userHasRole = currentRoles.stream()
-                    .anyMatch(role -> role.getName().equals(roleName));
-
-            if (!userHasRole) {
-                throw new BadRequestException("User does not have the role: " + roleName);
-            }
+            Role roleToRemove = user.getRoles().stream()
+                    .filter(role -> role.getName().equals(roleName))
+                    .findFirst()
+                    .orElseThrow(() -> new BadRequestException("User does not have the role: " + roleName));
 
             validateAdminRoleRemoval(roleName, user);
 
-            Role roleToRemove = currentRoles.stream()
-                    .filter(role -> role.getName().equals(roleName))
-                    .findFirst()
-                    .orElse(null);
+            user.removeRole(roleToRemove);
 
-            if (roleToRemove != null) {
-                user.getRoles().remove(roleToRemove);
-            }
-
+           
             User savedUser = userRepository.save(user);
             return userMapper.toResponse(savedUser);
 
@@ -194,6 +186,8 @@ public class UserManagementService implements IUserManagementService {
             User user = findUserById(userId);
 
             validateAdminDeletion(user);
+            user.clearRoles();
+            userRepository.flush();
 
             userRepository.delete(user);
         } catch (BadRequestException | ResourceNotFoundException e) {
@@ -308,6 +302,24 @@ public class UserManagementService implements IUserManagementService {
     private boolean isUserAdmin(User user) {
         return user.getRoles().stream()
                 .anyMatch(role -> RoleConstants.ADMIN.equals(role.getName()));
+    }
+
+    @Override
+    public boolean isCurrentUser(Long userId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof org.springframework.security.core.userdetails.UserDetails userDetails) {
+            String username = userDetails.getUsername();
+
+            User currentUser = userRepository.findActiveUserByUsername(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
+            return currentUser.getId().equals(userId);
+        }
+        return false;
     }
 
 }

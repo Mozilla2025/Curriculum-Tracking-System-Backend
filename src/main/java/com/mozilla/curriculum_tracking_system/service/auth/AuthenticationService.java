@@ -15,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -32,14 +33,18 @@ public class AuthenticationService implements IAuthenticationService {
     private final AuthenticationManager authenticationManager;
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
 
         validateLoginRequest(request);
 
         try {
             Authentication authentication = authenticateUser(request);
-            User user = (User) authentication.getPrincipal();
+            String username = authentication.getName();
+
+            User user = userRepository.findActiveUserByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+
 
             validateUserAccount(user);
 
@@ -73,7 +78,7 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public LoginResponse refreshToken(String refreshToken) {
         try {
             if (!StringUtils.hasText(refreshToken)) {
@@ -85,7 +90,8 @@ public class AuthenticationService implements IAuthenticationService {
             }
 
             String username = jwtUtil.getUsernameFromToken(refreshToken);
-            User user = findUserByUsername(username);
+            User user = userRepository.findActiveUserByUsername(username)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
             validateUserAccount(user);
 
@@ -141,6 +147,7 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public String getUsernameFromToken(String token) {
         try {
             return jwtUtil.getUsernameFromToken(token);
@@ -150,6 +157,7 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public Long getUserIdFromToken(String token) {
         try {
             return jwtUtil.getUserIdFromToken(token);
@@ -159,6 +167,7 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public String getEmailFromToken(String token) {
         try {
             return jwtUtil.getEmailFromToken(token);
@@ -168,6 +177,7 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public String getFirstNameFromToken(String token) {
         try {
             return jwtUtil.getFirstNameFromToken(token);
@@ -177,6 +187,7 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public String getLastNameFromToken(String token) {
         try {
             return jwtUtil.getLastNameFromToken(token);
@@ -186,6 +197,7 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public List<String> getRolesFromToken(String token) {
         try {
             return jwtUtil.getRolesFromToken(token);
@@ -195,6 +207,7 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public boolean hasRole(String token, String roleName) {
         try {
             return jwtUtil.hasRole(token, roleName);
@@ -204,6 +217,7 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public boolean hasAnyRole(String token, String... roleNames) {
         try {
             return jwtUtil.hasAnyRole(token, roleNames);
@@ -213,6 +227,7 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public boolean isAdmin(String token) {
         try {
             Boolean isAdmin = jwtUtil.isAdminFromToken(token);
@@ -223,6 +238,7 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public boolean isDean(String token) {
         try {
             Boolean isDean = jwtUtil.isDeanFromToken(token);
@@ -233,6 +249,7 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public boolean isViceChancellor(String token) {
         try {
             Boolean isViceChancellor = jwtUtil.isViceChancellorFromToken(token);
@@ -242,10 +259,6 @@ public class AuthenticationService implements IAuthenticationService {
         }
     }
 
-    private User findUserByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
-    }
 
     private void validateUserAccount(User user) {
         if (!user.isEnabled()) {

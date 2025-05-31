@@ -92,7 +92,6 @@ public class DataInitializationService implements CommandLineRunner {
                     .isCredentialsNonExpired(true)
                     .roles(Set.of(adminRole))
                     .build();
-            
             userRepository.save(adminUser);
             
             log.info("Default admin user created successfully");

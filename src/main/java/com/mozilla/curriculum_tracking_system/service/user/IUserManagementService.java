@@ -66,4 +66,7 @@ public interface IUserManagementService {
      * @param userId the user ID to delete
      */
     void deleteUser(Long userId);
+
+    public boolean isCurrentUser(Long userId);
+
 }
