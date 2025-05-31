@@ -2,6 +2,7 @@ package com.mozilla.curriculum_tracking_system.service.user;
 
 import com.mozilla.curriculum_tracking_system.constants.RoleConstants;
 import com.mozilla.curriculum_tracking_system.dto.user.CreateUserRequest;
+import com.mozilla.curriculum_tracking_system.dto.email.UserCredentialsEmailData;
 import com.mozilla.curriculum_tracking_system.dto.user.AssignRoleRequest;
 import com.mozilla.curriculum_tracking_system.dto.user.UserResponse;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
@@ -11,9 +12,9 @@ import com.mozilla.curriculum_tracking_system.model.roles.Role;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.roles.RoleRepository;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
+import com.mozilla.curriculum_tracking_system.service.email.IEmailService;
 
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,6 +31,7 @@ public class UserManagementService implements IUserManagementService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final IEmailService emailService;
 
     @Override
     @Transactional
@@ -47,6 +49,7 @@ public class UserManagementService implements IUserManagementService {
             }
 
             User savedUser = userRepository.save(user);
+            sendCredentialsEmail(savedUser, request.getPassword());
             return userMapper.toResponse(savedUser);
         } catch (BadRequestException | ResourceNotFoundException e) {
             throw e;
@@ -103,7 +106,6 @@ public class UserManagementService implements IUserManagementService {
 
             user.removeRole(roleToRemove);
 
-           
             User savedUser = userRepository.save(user);
             return userMapper.toResponse(savedUser);
 
@@ -316,10 +318,29 @@ public class UserManagementService implements IUserManagementService {
             String username = userDetails.getUsername();
 
             User currentUser = userRepository.findActiveUserByUsername(username)
-            .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
             return currentUser.getId().equals(userId);
         }
         return false;
+    }
+
+    private void sendCredentialsEmail(User user, String plainPassword) {
+        try {
+            String roleName = user.getRoles().isEmpty() ? "User" : user.getRoles().iterator().next().getName();
+
+            UserCredentialsEmailData credentialsEmailData = UserCredentialsEmailData.builder()
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .password(plainPassword)
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .roleName(roleName)
+                    .loginUrl(null)
+                    .build();
+
+            emailService.sendUserCredentialsEmail(credentialsEmailData);
+        } catch (Exception e) {
+        }
     }
 
 }

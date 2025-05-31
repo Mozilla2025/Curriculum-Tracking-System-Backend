@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .email-container {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #28a745;
+        }
+        .welcome-button {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h2>🎉 Welcome to Curriculum Tracking System!</h2>
+        </div>
+        
+        <p>Hello <span th:text="${username}">User</span>,</p>
+        
+        <p>Welcome to our platform! We're excited to have you on board.</p>
+        
+        <div style="text-align: center;">
+            <a th:href="${loginUrl}" class="welcome-button">Get Started</a>
+        </div>
+        
+        <p>If you need help, contact us at <a th:href="'mailto:' + ${supportEmail}" th:text="${supportEmail}"></a></p>
+    </div>
+</body>
+</html>
