@@ -1,0 +1,69 @@
+package com.mozilla.curriculum_tracking_system.controller.user;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.mozilla.curriculum_tracking_system.annotation.AdminOnly;
+import com.mozilla.curriculum_tracking_system.dto.user.AssignRoleRequest;
+import com.mozilla.curriculum_tracking_system.dto.user.CreateUserRequest;
+import com.mozilla.curriculum_tracking_system.dto.user.UserResponse;
+import com.mozilla.curriculum_tracking_system.response.ApiResponse;
+import com.mozilla.curriculum_tracking_system.service.user.IUserManagementService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("${api.prefix}/users")
+@RequiredArgsConstructor
+public class UserController {
+
+    private final IUserManagementService userManagementService;
+
+    @PostMapping("/create")
+    @AdminOnly(message = "Only administrators can create new users")
+    public ResponseEntity<ApiResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
+        UserResponse response = userManagementService.createUser(request);
+        return  ResponseEntity.ok(new ApiResponse("Successfully created user", response));
+    }
+
+    @PostMapping("/assign-role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> assignRole(@Valid @RequestBody AssignRoleRequest request) {
+        UserResponse response = userManagementService.assignRole(request);
+        return ResponseEntity.ok(new ApiResponse("Successfully assigned role to user", response));
+    }
+
+    @DeleteMapping("/{userId}/roles/{roleName}/delete")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> removeRole(
+            @PathVariable Long userId, 
+            @PathVariable String roleName) {
+        UserResponse response = userManagementService.removeRole(userId, roleName);
+        return ResponseEntity.ok(new ApiResponse("Successfully removed user role", response));
+    }
+    
+    @GetMapping("/get-all-users")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VICE_CHANCELLOR')")
+    public ResponseEntity<ApiResponse> getAllUsers() {
+        List<UserResponse> users = userManagementService.getAllUsers();
+        return ResponseEntity.ok(new ApiResponse("Successfully retrieved users", users));
+    }
+    
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VICE_CHANCELLOR') or @userManagementService.isCurrentUser(#userId)")
+    public ResponseEntity<ApiResponse> getUserById(@PathVariable Long userId) {
+        UserResponse user = userManagementService.getUserById(userId);
+        return ResponseEntity.ok(new ApiResponse("Successfully retrieved user", user));
+    }
+    
+}

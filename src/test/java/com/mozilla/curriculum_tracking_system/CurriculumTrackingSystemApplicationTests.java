@@ -1,13 +1,8 @@
 package com.mozilla.curriculum_tracking_system;
 
-import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+@SpringBootTest(classes = CurriculumTrackingSystemApplication.class)
 class CurriculumTrackingSystemApplicationTests {
-
-	@Test
-	void contextLoads() {
-	}
 
 }
