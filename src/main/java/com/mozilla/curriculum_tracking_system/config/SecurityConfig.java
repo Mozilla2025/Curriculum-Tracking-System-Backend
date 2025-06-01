@@ -65,6 +65,7 @@ public class SecurityConfig {
                         auth
                                 // Public endpoints - only login is public
                                 .requestMatchers("/api/v1/auth/login").permitAll()
+                                .requestMatchers("api/v1/auth/password/forgot").permitAll()
                                 .requestMatchers("/actuator/health").permitAll()
                                 
                                 // Admin-only endpoints - user management
