@@ -127,11 +127,5 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
     
-    // Catch-all exception handler
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse> handleGenericException(
-            Exception ex, WebRequest request) {
-        ApiResponse response = new ApiResponse("An unexpected error occurred. Please try again later.", null);
-        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    
 }

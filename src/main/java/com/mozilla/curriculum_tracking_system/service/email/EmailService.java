@@ -128,4 +128,24 @@ public class EmailService implements IEmailService {
         return templateEngine.process("email/" + templateName, context);
     }
 
+    @Override
+    public void sendPasswordResetSuccessEmail(String email, String username) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("username", username);
+        variables.put("loginUrl", frontendUrl + "/login");
+        variables.put("supportEmail", fromEmail);
+        variables.put("timestamp", java.time.LocalDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+        EmailRequest emailRequest = EmailRequest.builder()
+                .to(email)
+                .subject("Password Reset Successful")
+                .templateName("password-reset-success")
+                .variables(variables)
+                .isHtml(true)
+                .build();
+
+        sendEmail(emailRequest);
+    }
+
 }
