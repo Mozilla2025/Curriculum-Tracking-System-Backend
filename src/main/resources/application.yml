@@ -1,0 +1,79 @@
+spring:
+  application:
+    name: curriculum-tracking-system
+  config:
+    import: "file:keys.properties"
+  datasource:
+    url: ${db.url}
+    username: ${db.username}
+    password: ${db.password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: public
+  security:
+    method:
+      global-method-security:
+        pre-post-enabled: true
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${mail.username}
+    password: ${mail.password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.gmail.com
+server:
+  port: 8090
+  servlet:
+    context-path: /
+app:
+  jwtSecret: ${jwt.secret}
+  jwtExpirationMs: ${jwt.expiration.ms}
+  jwtRefreshExpirationMs: ${jwt.refresh.expiration.ms}
+  admin:
+    username: ${admin.username}
+    email: ${admin.email}
+    password: ${admin.password}
+  email:
+    from-name: Curriculum Tracking System
+  frontend:
+    url: ${frontend.url}
+  password-reset:
+    token-expiry-hours: 24
+api:
+  prefix: api/v1
+logging:
+  level:
+    com:
+      mozilla:
+        curriculum_tracking_system: DEBUG
+    org:
+      springframework:
+        security: DEBUG
+        orm:
+          jpa: DEBUG
+        transaction: DEBUG
+      hibernate:
+        SQL: DEBUG
+        type:
+          descriptor:
+            sql:
+              BasicBinder: TRACE
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} - %msg%n'
