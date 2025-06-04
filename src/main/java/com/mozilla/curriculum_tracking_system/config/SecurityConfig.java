@@ -65,7 +65,8 @@ public class SecurityConfig {
                         auth
                                 // Public endpoints - only login is public
                                 .requestMatchers("/api/v1/auth/login").permitAll()
-                                .requestMatchers("api/v1/auth/password/forgot").permitAll()
+                                .requestMatchers("/api/v1/auth/password/**").permitAll()
+                                .requestMatchers("api/v1/auth/refresh").permitAll()
                                 .requestMatchers("/actuator/health").permitAll()
                                 
                                 // Admin-only endpoints - user management
@@ -101,7 +102,7 @@ public class SecurityConfig {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         
         corsConfiguration.setAllowedOriginPatterns(List.of(
-            "http://localhost:3000",
+            "http://localhost:5173",
             "http://localhost:4200",
             "https://must.ac.ke"  
         ));

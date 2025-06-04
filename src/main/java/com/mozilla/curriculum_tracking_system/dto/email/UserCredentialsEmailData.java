@@ -16,5 +16,4 @@ public class UserCredentialsEmailData {
     private String firstName;
     private String lastName;
     private String roleName;
-    private String loginUrl;
 }
