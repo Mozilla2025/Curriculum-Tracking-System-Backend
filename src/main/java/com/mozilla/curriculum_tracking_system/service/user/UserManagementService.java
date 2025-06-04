@@ -335,7 +335,6 @@ public class UserManagementService implements IUserManagementService {
                     .firstName(user.getFirstName())
                     .lastName(user.getLastName())
                     .roleName(roleName)
-                    .loginUrl(null)
                     .build();
 
             emailService.sendUserCredentialsEmail(credentialsEmailData);
