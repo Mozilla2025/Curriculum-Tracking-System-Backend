@@ -8,5 +8,6 @@ public interface IEmailService {
     void sendUserCredentialsEmail(UserCredentialsEmailData credentialsEmailData);
     void sendPasswordResetEmail(String email, String resetToken);
     void sendWelcomeEmail(String email, String username);
+    void sendPasswordResetSuccessEmail(String email, String username);
 
 }
