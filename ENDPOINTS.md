@@ -3,37 +3,6 @@
 ## Overview
 This document provides comprehensive REST API endpoints for the Curriculum Tracking System. The system manages academic curriculums across schools, departments, and academic levels with role-based access control.
 
-
-### Get All Deans
-- **GET** `/users/deans`
-- **Description**: Retrieve all users with DEAN role
-
-### Get All Department Heads
-- **GET** `/users/department-heads`
-- **Description**: Retrieve all users with DEPARTMENT_HEAD role
-
----
-
-## Role Management Endpoints
-
-### Get All Roles
-- **GET** `/roles`
-- **Description**: Retrieve all available roles
-
-### Get Role by ID
-- **GET** `/roles/{roleId}`
-- **Description**: Retrieve specific role details
-- **Parameters**: 
-  - `roleId` (path) - Role ID
-
-### Get Users by Role
-- **GET** `/roles/{roleId}/users`
-- **Description**: Get all users assigned to a specific role
-- **Parameters**: 
-  - `roleId` (path) - Role ID
-
----
-
 ## School Management Endpoints
 
 ### Get All Schools
@@ -102,17 +71,11 @@ This document provides comprehensive REST API endpoints for the Curriculum Track
 - **GET** `/academic-levels`
 - **Description**: Retrieve all academic levels (Bachelor, Masters, PhD)
 
-### Get Academic Level by ID
-- **GET** `/academic-levels/{levelId}`
-- **Description**: Retrieve specific academic level details
-- **Parameters**: 
-  - `levelId` (path) - Academic Level ID
-
 ### Get Curriculums by Academic Level
-- **GET** `/academic-levels/{levelId}/curriculums`
+- **GET** `/academic-levels/{levelName}/curriculums`
 - **Description**: Get all curriculums for a specific academic level
 - **Parameters**: 
-  - `levelId` (path) - Academic Level ID
+  - `levelName` (path) - Academic Level ID
 
 ---
 
@@ -140,12 +103,6 @@ This document provides comprehensive REST API endpoints for the Curriculum Track
 - **GET** `/curriculums/phd`
 - **Description**: Get all curriculums by academic level
 
-### Get Curriculum Details
-- **GET** `/curriculums/{curriculumId}/details`
-- **Description**: Get all details for a specific curriculum
-- **Parameters**: 
-  - `curriculumId` (path) - Curriculum ID
-
 ### Get Curriculum Comments
 - **GET** `/curriculums/{curriculumId}/comments`
 - **Description**: Get all comments for a specific curriculum
@@ -172,12 +129,6 @@ This document provides comprehensive REST API endpoints for the Curriculum Track
 ---
 
 ## Dean-specific Endpoints
-
-### Get Dean's Schools
-- **GET** `/deans/{deanId}/schools`
-- **Description**: Get all schools under a specific dean
-- **Parameters**: 
-  - `deanId` (path) - Dean User ID
 
 ### Get Dean's Curriculums
 - **GET** `/deans/{deanId}/curriculums`
@@ -220,30 +171,6 @@ This document provides comprehensive REST API endpoints for the Curriculum Track
   - `headId` (path) - Department Head User ID
 
 ---
-
-## Curriculum Details Endpoints
-
-### Get All Curriculum Details
-- **GET** `/curriculum-details`
-- **Description**: Retrieve all curriculum details
-- **Query Parameters**:
-  - `type` - Filter by detail type (objective, learning_outcome, course_outline, assessment_method, resource, prerequisite)
-
-### Get Curriculum Detail by ID
-- **GET** `/curriculum-details/{detailId}`
-- **Description**: Retrieve specific curriculum detail
-- **Parameters**: 
-  - `detailId` (path) - Curriculum Detail ID
-
-### Get Specific Curriculum Detail
-- **GET** `/curriculums/{curriculumId}/details/{detailId}`
-- **Description**: Get specific detail of a curriculum
-- **Parameters**: 
-  - `curriculumId` (path) - Curriculum ID
-  - `detailId` (path) - Detail ID
-
----
-
 ## Comments Endpoints
 
 ### Get All Comments
@@ -286,19 +213,6 @@ This document provides comprehensive REST API endpoints for the Curriculum Track
 - **GET** `/schools/{schoolId}/curriculums?status=approved&level=bachelor`
 - **GET** `/departments/{departmentId}/curriculums?status=pending&level=masters`
 - **Description**: Get curriculums with multiple filters applied
-
-### Get Curriculums by Creator
-- **GET** `/curriculums?createdBy={userId}`
-- **Description**: Get curriculums created by a specific user
-- **Parameters**: 
-  - `userId` (query) - Creator User ID
-
-### Get Curriculums by Approver
-- **GET** `/curriculums?approvedBy={userId}`
-- **Description**: Get curriculums approved by a specific user
-- **Parameters**: 
-  - `userId` (query) - Approver User ID
-
 ---
 
 ## Search Endpoints
@@ -316,19 +230,4 @@ This document provides comprehensive REST API endpoints for the Curriculum Track
   - `department` (query) - Department ID
   - `level` (query) - Academic Level ID
   - `status` (query) - Curriculum Status
-
 ---
-
-## Statistics Endpoints
-
-### Get School Curriculum Statistics
-- **GET** `/schools/{schoolId}/curriculums/statistics`
-- **Description**: Get curriculum statistics for a specific school
-- **Parameters**: 
-  - `schoolId` (path) - School ID
-
-### Get Department Curriculum Statistics
-- **GET** `/departments/{departmentId}/curriculums/statistics`
-- **Description**: Get curriculum statistics for a specific department
-- **Parameters**: 
-  - `departmentId` (path) - Department ID
