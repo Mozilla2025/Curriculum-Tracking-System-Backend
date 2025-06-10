@@ -29,10 +29,10 @@ public class JwtUtil {
     public String generateJwtToken(Authentication authentication){
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
 
-        return Jwts.builder()
+        return String.valueOf(Jwts.builder()
                 .subject(userPrincipal.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 60 * 60 *30))
+                .expiration(new Date(System.currentTimeMillis() + 60 * 60 *30)));
 
     }
 }
