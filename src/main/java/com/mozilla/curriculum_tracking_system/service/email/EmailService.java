@@ -31,7 +31,7 @@ public class EmailService implements IEmailService {
     @Value("${app.email.from-name:Curriculum Tracking System}")
     private String fromName;
 
-    @Value("${app.frontend.url:http://localhost:3000}")
+    @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
     @Override
@@ -44,6 +44,14 @@ public class EmailService implements IEmailService {
             helper.setTo(emailRequest.getTo());
             helper.setSubject(emailRequest.getSubject());
 
+            helper.setReplyTo(fromEmail);
+
+            message.setHeader("X-Priority", "3");
+            message.setHeader("X-MSMail-Priority", "Normal");
+
+            message.setHeader("X-Mailer", "Curriculum Tracking System");
+            message.setHeader("X-Auto-Response-Suppress", "OOF, AutoReply");
+
             String content;
             if (emailRequest.getTemplateName() != null && !emailRequest.getTemplateName().isEmpty()) {
                 content = processTemplate(emailRequest.getTemplateName(), emailRequest.getVariables());
@@ -51,7 +59,12 @@ public class EmailService implements IEmailService {
             } else {
                 content = "Default email content";
             }
-            helper.setText(content, emailRequest.isHtml());
+
+            if (emailRequest.isHtml()) {
+                helper.setText(generatePlainTextVersion(content), content);
+            } else {
+                helper.setText(content, false);
+            }
 
             mailSender.send(message);
         } catch (MessagingException e) {
@@ -70,13 +83,14 @@ public class EmailService implements IEmailService {
         variables.put("firstName", credentialsData.getFirstName());
         variables.put("lastName", credentialsData.getLastName());
         variables.put("roleName", credentialsData.getRoleName());
-        variables.put("loginUrl",
-                credentialsData.getLoginUrl() != null ? credentialsData.getLoginUrl() : frontendUrl + "/login");
+        variables.put("loginUrl", frontendUrl + "/login");
         variables.put("supportEmail", fromEmail);
+        variables.put("companyName", "Mozilla Foundation");
+        variables.put("currentYear", java.time.Year.now().getValue());
 
         EmailRequest emailRequest = EmailRequest.builder()
                 .to(credentialsData.getEmail())
-                .subject("Welcome! Your Account Credentials")
+                .subject("🎓 Welcome! Your Account Credentials - Curriculum Tracking System")
                 .templateName("user-credentials")
                 .variables(variables)
                 .isHtml(true)
@@ -89,11 +103,15 @@ public class EmailService implements IEmailService {
     public void sendPasswordResetEmail(String email, String resetToken) {
         Map<String, Object> variables = new HashMap<>();
         variables.put("resetUrl", frontendUrl + "/reset-password?token=" + resetToken);
+        variables.put("resetLink", frontendUrl + "/reset-password?token=" + resetToken);
         variables.put("supportEmail", fromEmail);
+        variables.put("companyName", "Mozilla Foundation");
+        variables.put("currentYear", java.time.Year.now().getValue());
+        variables.put("expiryTime", "24 hours");
 
         EmailRequest emailRequest = EmailRequest.builder()
                 .to(email)
-                .subject("Password Reset Request")
+                .subject("🔐 Password Reset Request - Curriculum Tracking System")
                 .templateName("password-reset")
                 .variables(variables)
                 .isHtml(true)
@@ -107,11 +125,14 @@ public class EmailService implements IEmailService {
         Map<String, Object> variables = new HashMap<>();
         variables.put("username", username);
         variables.put("loginUrl", frontendUrl + "/login");
+        variables.put("loginLink", frontendUrl + "/login");
         variables.put("supportEmail", fromEmail);
+        variables.put("companyName", "Mozilla Foundation");
+        variables.put("currentYear", java.time.Year.now().getValue());
 
         EmailRequest emailRequest = EmailRequest.builder()
                 .to(email)
-                .subject("Welcome to Curriculum Tracking System")
+                .subject("🎉 Welcome to Curriculum Tracking System")
                 .templateName("welcome")
                 .variables(variables)
                 .isHtml(true)
@@ -120,12 +141,43 @@ public class EmailService implements IEmailService {
         sendEmail(emailRequest);
     }
 
+    @Override
+    public void sendPasswordResetSuccessEmail(String email, String username) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("username", username);
+        variables.put("loginUrl", frontendUrl + "/login");
+        variables.put("loginLink", frontendUrl + "/login");
+        variables.put("supportEmail", fromEmail);
+        variables.put("companyName", "Mozilla Foundation");
+        variables.put("currentYear", java.time.Year.now().getValue());
+        variables.put("timestamp", java.time.LocalDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a")));
+
+        EmailRequest emailRequest = EmailRequest.builder()
+                .to(email)
+                .subject("✅ Password Reset Successful - Curriculum Tracking System")
+                .templateName("password-reset-success")
+                .variables(variables)
+                .isHtml(true)
+                .build();
+
+        sendEmail(emailRequest);
+    }
+
     private String processTemplate(String templateName, Map<String, Object> variables) {
-        Context context = new Context();
+        Context contex = new Context();
         if (variables != null) {
-            context.setVariables(variables);
+            contex.setVariables(variables);
         }
-        return templateEngine.process("email/" + templateName, context);
+
+        return templateEngine.process("email/" + templateName, contex);
+    }
+
+    private String generatePlainTextVersion(String htmlContent) {
+        return htmlContent
+                .replaceAll("<[^>]+>", "")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
 }
