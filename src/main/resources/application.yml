@@ -38,6 +38,33 @@ spring:
             required: true
           ssl:
             trust: smtp.gmail.com
+
+  # Redis Configuration
+  data:
+    redis:
+      host: ${redis.host}
+      port: ${redis.port:6380}
+      password: ${redis.password}
+      database: ${redis.database}
+      timeout: 2000ms
+      jedis:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+      ssl:
+        enabled: false
+
+  # Cache Configuration
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000
+      cache-null-values: false
+      use-key-prefix: true
+      key-prefix: curriculum-system
+
 server:
   port: 8090
   servlet:
@@ -56,6 +83,10 @@ app:
     url: ${frontend.url}
   password-reset:
     token-expiry-hours: 24
+  cache:
+    ttl:
+      departments: 1800
+      schools: 3600
 api:
   prefix: api/v1
 logging:

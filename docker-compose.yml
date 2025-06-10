@@ -1,0 +1,45 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: curriculum-system-redis
+    ports:
+      - "${REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - curriculum-tracking-system-network
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: curriculum-tracking-system-redis-ui
+    hostname: redis-commander
+    ports:
+      - "8082:8081"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=0
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - curriculum-tracking-system-network
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  curriculum-tracking-system-network:
+    driver: bridge

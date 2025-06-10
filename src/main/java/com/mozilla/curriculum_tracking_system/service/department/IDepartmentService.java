@@ -18,14 +18,13 @@ public interface IDepartmentService {
 
     DepartmentDto getDepartmentById(Long departmentId);
 
-    DepartmentDto createDepartment(CreateDepartmentRequest request);
-
-    DepartmentDto updateDepartment(Long departmentId, UpdateDepartmentRequest request);
-
-    void deleteDepartment(Long departmentId);
-
     boolean existsById(Long departmentId);
 
     long getDepartmentCountBySchoolId(Long schoolId);
 
+    DepartmentDto createDepartment(CreateDepartmentRequest request, String token);
+
+    DepartmentDto updateDepartment(Long departmentId, UpdateDepartmentRequest request, String token);
+
+    void deleteDepartment(Long departmentId, String token);
 }
