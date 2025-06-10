@@ -1,23 +1,19 @@
 package com.mozilla.curriculum_tracking_system.controller.department;
 
-import com.mozilla.curriculum_tracking_system.dto.department.CreateDepartmentRequest;
 import com.mozilla.curriculum_tracking_system.dto.department.DepartmentDto;
 import com.mozilla.curriculum_tracking_system.dto.department.DepartmentPageResponse;
-import com.mozilla.curriculum_tracking_system.dto.department.UpdateDepartmentRequest;
 import com.mozilla.curriculum_tracking_system.response.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.department.DepartmentService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("${api.prefix}/departments")
+@RequestMapping("${api.prefix}/departments/user")
 @RequiredArgsConstructor
 @Slf4j
 public class DepartmentController {
@@ -104,59 +100,7 @@ public class DepartmentController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    /**
-     * Create a new department
-     */
-    @PostMapping("/create-department")
-    public ResponseEntity<ApiResponse> createDepartment(@Valid @RequestBody CreateDepartmentRequest request) {
-        log.debug("POST /api/v1/departments - request: {}", request);
 
-        DepartmentDto createdDepartment = departmentService.createDepartment(request);
-
-        ApiResponse apiResponse = new ApiResponse(
-                "Department created successfully",
-                createdDepartment
-        );
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
-    }
-
-    /**
-     * Update an existing department
-     */
-    @PutMapping("/update/{departmentId}")
-    public ResponseEntity<ApiResponse> updateDepartment(
-            @PathVariable Long departmentId,
-            @Valid @RequestBody UpdateDepartmentRequest request) {
-
-        log.debug("PUT /api/v1/departments/{} - request: {}", departmentId, request);
-
-        DepartmentDto updatedDepartment = departmentService.updateDepartment(departmentId, request);
-
-        ApiResponse apiResponse = new ApiResponse(
-                "Department updated successfully",
-                updatedDepartment
-        );
-
-        return ResponseEntity.ok(apiResponse);
-    }
-
-    /**
-     * Delete a department
-     */
-    @DeleteMapping("/delete/{departmentId}")
-    public ResponseEntity<ApiResponse> deleteDepartment(@PathVariable Long departmentId) {
-        log.debug("DELETE /api/v1/departments/{}", departmentId);
-
-        departmentService.deleteDepartment(departmentId);
-
-        ApiResponse apiResponse = new ApiResponse(
-                "Department deleted successfully",
-                null
-        );
-
-        return ResponseEntity.noContent().build();
-    }
 
     /**
      * Get department count by school ID
@@ -191,4 +135,6 @@ public class DepartmentController {
 
         return ResponseEntity.ok(apiResponse);
     }
+
+
 }
