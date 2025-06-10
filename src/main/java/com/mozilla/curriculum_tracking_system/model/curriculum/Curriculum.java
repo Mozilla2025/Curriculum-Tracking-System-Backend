@@ -22,21 +22,6 @@ import java.util.Set;
 @Table(name = "curriculums", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"name", "department_id", "academic_level_id"})
 })
-@EqualsAndHashCode(exclude = {"school", "department", "academicLevel", "comments"})
-@ToString(exclude = {"school", "department", "academicLevel", "comments"})
-@NamedEntityGraphs({
-    @NamedEntityGraph(name = "Curriculum.basic", attributeNodes = {
-        @NamedAttributeNode("school"),
-        @NamedAttributeNode("department"),
-        @NamedAttributeNode("academicLevel")
-    }),
-    @NamedEntityGraph(name = "Curriculum.withComments", attributeNodes = {
-        @NamedAttributeNode("school"),
-        @NamedAttributeNode("department"),
-        @NamedAttributeNode("academicLevel"),
-        @NamedAttributeNode("comments")
-    })
-})
 public class Curriculum {
 
     @Id

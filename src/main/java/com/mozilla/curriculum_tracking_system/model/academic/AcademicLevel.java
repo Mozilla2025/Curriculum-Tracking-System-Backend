@@ -14,8 +14,6 @@ import java.util.Set;
 @Builder
 @Entity
 @Table(name = "academic_levels")
-@EqualsAndHashCode(exclude = {"curriculums"})
-@ToString(exclude = {"curriculums"})
 public class AcademicLevel {
 
     @Id

@@ -15,9 +15,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.NamedAttributeNode;
-import jakarta.persistence.NamedEntityGraph;
-import jakarta.persistence.NamedEntityGraphs;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -25,9 +22,7 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 @Data
 @NoArgsConstructor
@@ -35,16 +30,6 @@ import lombok.ToString;
 @Builder
 @Entity
 @Table(name = "schools")
-@EqualsAndHashCode(exclude = {"departments", "curriculums"})
-@ToString(exclude = {"departments", "curriculums"})
-@NamedEntityGraphs({
-    @NamedEntityGraph(name = "School.withDepartments", attributeNodes = @NamedAttributeNode("departments")),
-    @NamedEntityGraph(name = "School.withCurriculums", attributeNodes = @NamedAttributeNode("curriculums")),
-    @NamedEntityGraph(name = "School.detailed", attributeNodes = {
-        @NamedAttributeNode("departments"),
-        @NamedAttributeNode("curriculums")
-    })
-})
 public class School {
 
     @Id
