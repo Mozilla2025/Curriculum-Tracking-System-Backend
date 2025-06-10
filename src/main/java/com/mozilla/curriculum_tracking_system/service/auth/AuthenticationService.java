@@ -43,7 +43,7 @@ public class AuthenticationService implements IAuthenticationService {
             String username = authentication.getName();
 
             User user = userRepository.findActiveUserByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
 
 
             validateUserAccount(user);
@@ -74,7 +74,7 @@ public class AuthenticationService implements IAuthenticationService {
             throw new BadRequestException("Account is disabled");
         } catch (AuthenticationException e) {
             throw new BadRequestException("Authentication failed: " + e.getMessage());
-        } 
+        }
     }
 
     @Override
@@ -91,7 +91,7 @@ public class AuthenticationService implements IAuthenticationService {
 
             String username = jwtUtil.getUsernameFromToken(refreshToken);
             User user = userRepository.findActiveUserByUsername(username)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
             validateUserAccount(user);
 
@@ -254,6 +254,17 @@ public class AuthenticationService implements IAuthenticationService {
         try {
             Boolean isViceChancellor = jwtUtil.isViceChancellorFromToken(token);
             return isViceChancellor != null && isViceChancellor;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+    @Override
+    public boolean isHeadOfDepartment(String token) {
+        try {
+            Boolean isHOD = jwtUtil.isHeadOfDepartmentFromToken(token);
+            return isHOD != null && isHOD;
         } catch (Exception e) {
             return false;
         }

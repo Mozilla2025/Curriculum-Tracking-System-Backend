@@ -47,6 +47,7 @@ public class DataInitializationService implements CommandLineRunner {
         createRoleIfNotExists(RoleConstants.ADMIN, "System Administrator with full access");
         createRoleIfNotExists(RoleConstants.VICE_CHANCELLOR, "Vice Chancellor of the institution");
         createRoleIfNotExists(RoleConstants.DEAN, "Dean of a faculty or school");
+        createRoleIfNotExists(RoleConstants.HEAD_OF_DEPARTMENT, "Dean of a faculty or school");
         createRoleIfNotExists(RoleConstants.ASSISTANT_ROLE, "Assistant roles to dean");
         log.info("Role initialization completed");
     }

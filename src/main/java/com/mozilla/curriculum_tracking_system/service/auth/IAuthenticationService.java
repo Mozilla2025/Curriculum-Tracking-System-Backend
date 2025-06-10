@@ -2,6 +2,8 @@ package com.mozilla.curriculum_tracking_system.service.auth;
 
 import com.mozilla.curriculum_tracking_system.dto.auth.LoginRequest;
 import com.mozilla.curriculum_tracking_system.dto.auth.LoginResponse;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -26,4 +28,7 @@ public interface IAuthenticationService {
     boolean isAdmin(String token);
     boolean isDean(String token);
     boolean isViceChancellor(String token);
+
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+    boolean isHeadOfDepartment(String token);
 }
