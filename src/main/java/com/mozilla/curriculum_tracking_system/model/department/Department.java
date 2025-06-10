@@ -23,16 +23,6 @@ import java.util.Set;
     @UniqueConstraint(columnNames = {"name", "school_id"}),
     @UniqueConstraint(columnNames = {"code", "school_id"})
 })
-@EqualsAndHashCode(exclude = {"school", "curriculums"})
-@ToString(exclude = {"school", "curriculums"})
-@NamedEntityGraphs({
-    @NamedEntityGraph(name = "Department.withSchool", attributeNodes = @NamedAttributeNode("school")),
-    @NamedEntityGraph(name = "Department.withCurriculums", attributeNodes = @NamedAttributeNode("curriculums")),
-    @NamedEntityGraph(name = "Department.detailed", attributeNodes = {
-        @NamedAttributeNode("school"),
-        @NamedAttributeNode("curriculums")
-    })
-})
 public class Department {
  @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,9 +36,6 @@ public class Department {
 
     @Column(name = "head_id")
     private Long headId;
-
-    @Builder.Default
-    private boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

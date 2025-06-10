@@ -13,11 +13,6 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @Table(name = "comments")
-@EqualsAndHashCode(exclude = {"curriculum"})
-@ToString(exclude = {"curriculum"})
-@NamedEntityGraphs({
-    @NamedEntityGraph(name = "Comment.withCurriculum", attributeNodes = @NamedAttributeNode("curriculum"))
-})
 public class Comment {
 
     @Id
