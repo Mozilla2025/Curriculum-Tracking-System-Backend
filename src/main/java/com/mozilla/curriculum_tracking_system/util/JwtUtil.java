@@ -50,6 +50,7 @@ public class JwtUtil {
 
             claims.put("isAdmin", roleNames.contains("ADMIN"));
             claims.put("isDean", roleNames.contains("DEAN"));
+            claims.put("isHOD", roleNames.contains("HOD"));
             claims.put("isViceChancellor", roleNames.contains("VICE_CHANCELLOR"));
         }
 
@@ -106,6 +107,10 @@ public class JwtUtil {
 
     public Boolean isDeanFromToken(String token) {
         return getClaimsFromToken(token, claims -> (Boolean) claims.get("isDean"));
+    }
+
+    public Boolean isHeadOfDepartmentFromToken(String token) {
+        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isHOD"));
     }
 
     public Boolean isViceChancellorFromToken(String token) {
