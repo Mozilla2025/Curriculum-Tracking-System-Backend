@@ -30,14 +30,8 @@ public class School {
     @Column(length = 20)
     private String code;
 
-    @Column(length = 100)
-    private String email;
-
     @Column(name = "dean_id")
     private Long deanId;
-
-    @Builder.Default
-    private boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
