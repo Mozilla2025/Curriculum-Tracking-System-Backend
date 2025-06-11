@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -15,6 +14,8 @@ import java.util.Set;
 @Builder
 @Entity
 @Table(name = "academic_levels")
+@EqualsAndHashCode(exclude = {"curriculums"})
+@ToString(exclude = {"curriculums"})
 public class AcademicLevel {
 
     @Id
