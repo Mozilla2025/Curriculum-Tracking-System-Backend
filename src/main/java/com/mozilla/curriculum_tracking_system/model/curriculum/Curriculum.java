@@ -42,12 +42,6 @@ public class Curriculum {
     @Builder.Default
     private CurriculumStatus status = CurriculumStatus.PENDING;
 
-    @Column(name = "created_by", nullable = false)
-    private Long createdBy;
-
-    @Column(name = "approved_by")
-    private Long approvedBy;
-
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
 
@@ -104,17 +98,6 @@ public class Curriculum {
         comment.setCurriculum(null);
     }
 
-    public void approve(Long approvedBy) {
-        this.status = CurriculumStatus.APPROVED;
-        this.approvedBy = approvedBy;
-        this.approvedAt = LocalDateTime.now();
-    }
-
-    public void reject(Long rejectedBy) {
-        this.status = CurriculumStatus.REJECTED;
-        this.approvedBy = rejectedBy;
-        this.approvedAt = LocalDateTime.now();
-    }
 
     public void putUnderReview() {
         this.status = CurriculumStatus.UNDER_REVIEW;
