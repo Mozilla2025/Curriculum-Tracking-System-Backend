@@ -4,6 +4,7 @@ import com.mozilla.curriculum_tracking_system.dto.curriculum.*;
 import com.mozilla.curriculum_tracking_system.enums.CurriculumStatus;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
+import com.mozilla.curriculum_tracking_system.exception.UnauthorizedException;
 import com.mozilla.curriculum_tracking_system.mapper.CurriculumMapper;
 import com.mozilla.curriculum_tracking_system.model.academic.AcademicLevel;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
@@ -13,6 +14,7 @@ import com.mozilla.curriculum_tracking_system.repository.academic.AcademicLevelR
 import com.mozilla.curriculum_tracking_system.repository.curriculum.CurriculumRepository;
 import com.mozilla.curriculum_tracking_system.repository.department.DepartmentRepository;
 import com.mozilla.curriculum_tracking_system.repository.school.SchoolRepository;
+import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
 import com.mozilla.curriculum_tracking_system.specification.CurriculumSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -34,16 +36,17 @@ public class CurriculumService implements ICurriculumService {
     private final DepartmentRepository departmentRepository;
     private final AcademicLevelRepository academicLevelRepository;
     private final CurriculumMapper curriculumMapper;
+    private final IAuthenticationService authenticationService;
 
     @Override
-    public CurriculumDto createCurriculum(CreateCurriculumRequest request) {
+    public CurriculumDto createCurriculum(CreateCurriculumRequest request, String authToken) {
+        validateAdminAccess(authToken);
         validateCreateRequest(request);
 
         if (curriculumRepository.findByNameAndDepartmentIdAndAcademicLevelId(
                 request.getName(), request.getDepartmentId(), request.getAcademicLevelId()
         ).isPresent()) {
             throw new BadRequestException("Curriculum with this name already exists in the specified department and academic level");
-
         }
 
         if (StringUtils.hasText(request.getCode()) && curriculumRepository.findByCode(request.getCode()).isPresent()) {
@@ -62,7 +65,7 @@ public class CurriculumService implements ICurriculumService {
         // Create curriculum Entity
         Curriculum curriculum = curriculumMapper.toEntity(request, school, department, academicLevel);
 
-        //Save Curriculum
+        // Save Curriculum
         Curriculum savedCurriculum = curriculumRepository.save(curriculum);
 
         return curriculumMapper.toDto(savedCurriculum);
@@ -81,7 +84,6 @@ public class CurriculumService implements ICurriculumService {
     @Transactional(readOnly = true)
     public CurriculumPageResponse getAllCurriculums(Pageable pageable) {
         Page<Curriculum> curriculumPage = curriculumRepository.findAll(pageable);
-
         return curriculumMapper.buildCurriculumPageResponse(curriculumPage);
     }
 
@@ -91,25 +93,23 @@ public class CurriculumService implements ICurriculumService {
         Page<Curriculum> curriculumPage = curriculumRepository.findAll(
                 CurriculumSpecification.withCriteria(criteria), pageable
         );
-
         return curriculumMapper.buildCurriculumPageResponse(curriculumPage);
     }
 
     @Override
-    public CurriculumDto updateCurriculum(Long id, UpdateCurriculumRequest request) {
+    public CurriculumDto updateCurriculum(Long id, UpdateCurriculumRequest request, String authToken) {
+        validateAdminAccess(authToken);
 
         Curriculum curriculum = findCurriculumById(id);
-
         validateUpdateRequest(curriculum, request);
 
         Department department = null;
         if (request.getDepartmentId() != null && !request.getDepartmentId().equals(curriculum.getDepartment().getId())) {
-
             department = findDepartmentById(request.getDepartmentId());
 
             // Validate that department belongs to the same school
             if (!department.getSchool().getId().equals(curriculum.getSchool().getId())) {
-                throw new BadRequestException("Department does not belong to the curriculums school");
+                throw new BadRequestException("Department does not belong to the curriculum's school");
             }
         }
 
@@ -121,12 +121,12 @@ public class CurriculumService implements ICurriculumService {
         curriculumMapper.updateEntityFromRequest(curriculum, request, department, academicLevel);
 
         Curriculum updatedCurriculum = curriculumRepository.save(curriculum);
-
         return curriculumMapper.toDto(updatedCurriculum);
     }
 
     @Override
-    public void deleteCurriculum(Long id) {
+    public void deleteCurriculum(Long id, String authToken) {
+        validateAdminAccess(authToken);
 
         // Soft deletion...Just inactivate the curriculum
         Curriculum curriculum = findCurriculumById(id);
@@ -135,7 +135,8 @@ public class CurriculumService implements ICurriculumService {
     }
 
     @Override
-    public void permanentlyDeleteCurriculum(Long id) {
+    public void permanentlyDeleteCurriculum(Long id, String authToken) {
+        validateAdminAccess(authToken);
 
         if (!curriculumRepository.existsById(id)) {
             throw new ResourceNotFoundException("Curriculum not found");
@@ -144,25 +145,25 @@ public class CurriculumService implements ICurriculumService {
         curriculumRepository.deleteById(id);
     }
 
-
     @Override
-    public CurriculumDto putCurriculumUnderReview(Long id) {
+    public CurriculumDto putCurriculumUnderReview(Long id, String authToken) {
+        validateAdminAccess(authToken);
 
         Curriculum curriculum = findCurriculumById(id);
         curriculum.putUnderReview();
 
         Curriculum savedCurriculum = curriculumRepository.save(curriculum);
-
         return curriculumMapper.toDto(savedCurriculum);
     }
 
     @Override
-    public CurriculumDto toggleCurriculumStatus(Long id) {
+    public CurriculumDto toggleCurriculumStatus(Long id, String authToken) {
+        validateAdminAccess(authToken);
+
         Curriculum curriculum = findCurriculumById(id);
         curriculum.setActive(!curriculum.isActive());
 
         Curriculum savedCurriculum = curriculumRepository.save(curriculum);
-
         return curriculumMapper.toDto(savedCurriculum);
     }
 
@@ -181,14 +182,12 @@ public class CurriculumService implements ICurriculumService {
         findDepartmentById(departmentId);
 
         Page<Curriculum> curriculumPage = curriculumRepository.findByDepartmentId(departmentId, pageable);
-
         return curriculumMapper.buildCurriculumPageResponse(curriculumPage);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CurriculumPageResponse getCurriculumsByAcademicLevel(Long academicLevelId, Pageable pageable) {
-
         findAcademicLevelById(academicLevelId);
 
         Page<Curriculum> curriculumPage = curriculumRepository.findByAcademicLevelId(academicLevelId, pageable);
@@ -209,12 +208,26 @@ public class CurriculumService implements ICurriculumService {
     @Override
     @Transactional(readOnly = true)
     public List<CurriculumDto> getCurriculumsExpiringSoon(int days) {
-
         LocalDateTime startDate = LocalDateTime.now();
         LocalDateTime endDate = startDate.plusDays(days);
 
         List<Curriculum> curriculums = curriculumRepository.findCurriculumsExpiringSoon(startDate, endDate);
         return curriculumMapper.toDtoList(curriculums);
+    }
+
+    private void validateAdminAccess(String authToken) {
+        if (!StringUtils.hasText(authToken)) {
+            throw new UnauthorizedException("Authorization token is required");
+        }
+
+
+        if (!authenticationService.validateToken(authToken)) {
+            throw new UnauthorizedException("Invalid or expired token");
+        }
+
+        if (!authenticationService.isAdmin(authToken)) {
+            throw new UnauthorizedException("Admin access required for this operation");
+        }
     }
 
     private Curriculum findCurriculumById(Long id) {

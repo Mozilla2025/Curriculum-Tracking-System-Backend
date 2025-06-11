@@ -5,7 +5,7 @@ import com.mozilla.curriculum_tracking_system.dto.department.CreateDepartmentReq
 import com.mozilla.curriculum_tracking_system.dto.department.DepartmentDto;
 import com.mozilla.curriculum_tracking_system.dto.department.UpdateDepartmentRequest;
 import com.mozilla.curriculum_tracking_system.response.ApiResponse;
-import com.mozilla.curriculum_tracking_system.service.department.DepartmentService;
+import com.mozilla.curriculum_tracking_system.service.department.IDepartmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,11 +15,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("${api.prefix}/departments/admin")
+@RequestMapping("${api.prefix}/admin/departments")
 @RequiredArgsConstructor
 @Slf4j
 public class DepartmentAdminController {
-    private final DepartmentService departmentService;
+    private final IDepartmentService departmentService;
 
 
     /**
