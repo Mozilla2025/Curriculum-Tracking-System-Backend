@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -19,6 +20,7 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mozilla.curriculum_tracking_system.constants.CacheConstants;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +44,14 @@ public class CacheConfig {
         mapper.registerModule(new JavaTimeModule());
         mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
+        mapper.activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+
+        );
+
         return mapper;
     }
 
@@ -88,7 +98,6 @@ public class CacheConfig {
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
 
         addDepartmentCacheConfigurations(cacheConfigurations, defaultConfig);
-
         addSchoolCacheConfigurations(cacheConfigurations, defaultConfig);
 
         return cacheConfigurations;
@@ -114,5 +123,4 @@ public class CacheConfig {
         cacheConfigurations.put(CacheConstants.SCHOOL_BY_ID, defaultConfig.entryTtl(schoolTtl));
         cacheConfigurations.put(CacheConstants.SCHOOL_EXISTS, defaultConfig.entryTtl(schoolTtl));
     }
-
 }
