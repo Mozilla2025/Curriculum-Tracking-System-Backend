@@ -15,7 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("${api.prefix}/departments/admin")
+@RequestMapping("${api.prefix}/admin/departments")
 @RequiredArgsConstructor
 @Slf4j
 public class DepartmentAdminController {
