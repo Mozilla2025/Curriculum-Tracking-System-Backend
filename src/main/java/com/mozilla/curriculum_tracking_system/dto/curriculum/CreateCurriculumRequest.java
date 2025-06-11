@@ -23,8 +23,6 @@ public class CreateCurriculumRequest {
     @Positive(message = "Duration semesters must be positive")
     private Integer durationSemesters;
 
-    @NotNull(message = "Created by is required")
-    private Long createdBy;
 
     private LocalDateTime effectiveDate;
     private LocalDateTime expiryDate;

@@ -255,10 +255,6 @@ public class CurriculumService implements ICurriculumService {
             throw new BadRequestException("Curriculum name is required");
         }
 
-        if (request.getCreatedBy() == null) {
-            throw new BadRequestException("Created by is required");
-        }
-
         if (request.getSchoolId() == null) {
             throw new BadRequestException("School ID is required");
         }
