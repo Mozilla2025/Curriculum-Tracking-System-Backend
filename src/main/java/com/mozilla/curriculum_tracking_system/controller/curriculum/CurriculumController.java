@@ -24,8 +24,6 @@ public class CurriculumController {
     @GetMapping("/get-by-id/{curriculumId}")
     public ResponseEntity<ApiResponse> getCurriculumById(@PathVariable Long curriculumId) {
 
-        log.debug("GET /api/v1/curriculums/{}", curriculumId);
-
         CurriculumDto curriculum = curriculumService.getCurriculumById(curriculumId);
 
         ApiResponse apiResponse = new ApiResponse(
@@ -40,7 +38,6 @@ public class CurriculumController {
     public ResponseEntity<ApiResponse> getAllCurriculums(
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
 
-        log.debug("GET /api/v1/curriculums - pageable: {}", pageable);
 
         CurriculumPageResponse curriculums = curriculumService.getAllCurriculums(pageable);
 
