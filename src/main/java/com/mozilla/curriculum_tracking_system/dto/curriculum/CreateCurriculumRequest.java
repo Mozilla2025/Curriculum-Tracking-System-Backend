@@ -23,7 +23,6 @@ public class CreateCurriculumRequest {
     @Positive(message = "Duration semesters must be positive")
     private Integer durationSemesters;
 
-
     private LocalDateTime effectiveDate;
     private LocalDateTime expiryDate;
 

@@ -1,17 +1,19 @@
 package com.mozilla.curriculum_tracking_system.config;
 
 import com.mozilla.curriculum_tracking_system.constants.RoleConstants;
+import com.mozilla.curriculum_tracking_system.enums.CurriculumStatus;
 import com.mozilla.curriculum_tracking_system.model.academic.AcademicLevel;
+import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import com.mozilla.curriculum_tracking_system.model.department.Department;
 import com.mozilla.curriculum_tracking_system.model.roles.Role;
 import com.mozilla.curriculum_tracking_system.model.school.School;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.academic.AcademicLevelRepository;
+import com.mozilla.curriculum_tracking_system.repository.curriculum.CurriculumRepository;
 import com.mozilla.curriculum_tracking_system.repository.department.DepartmentRepository;
 import com.mozilla.curriculum_tracking_system.repository.roles.RoleRepository;
 import com.mozilla.curriculum_tracking_system.repository.school.SchoolRepository;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,11 +22,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +35,7 @@ public class DataInitializationService implements CommandLineRunner {
     private final AcademicLevelRepository academicLevelRepository;
     private final SchoolRepository schoolRepository;
     private final DepartmentRepository departmentRepository;
+    private final CurriculumRepository curriculumRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.admin.username:admin}")
@@ -52,10 +52,11 @@ public class DataInitializationService implements CommandLineRunner {
     public void run(String... args) {
         log.info("Starting system data initialization...");
 
-        initializeRoles();
-        initializeDefaultAdmin();
-        initializeAcademicLevels();
-        initializeSchoolsAndDepartments();
+//        initializeRoles();
+//        initializeDefaultAdmin();
+//        initializeAcademicLevels();
+//        initializeSchoolsAndDepartments();
+//        initializeCurriculums();
 
         log.info("System data initialization completed successfully!");
     }
@@ -302,6 +303,245 @@ public class DataInitializationService implements CommandLineRunner {
         }
     }
 
+    private void initializeCurriculums() {
+        log.info("Initializing curriculums...");
+
+        List<School> schools = schoolRepository.findAll();
+        List<AcademicLevel> academicLevels = academicLevelRepository.findAll();
+
+        if (schools.isEmpty() || academicLevels.isEmpty()) {
+            log.warn("No schools or academic levels found. Skipping curriculum initialization.");
+            return;
+        }
+
+        int totalCurriculumsCreated = 0;
+
+        for (School school : schools) {
+            List<Department> departments = departmentRepository.findBySchoolId(school.getId(),
+                    org.springframework.data.domain.PageRequest.of(0, Integer.MAX_VALUE)).getContent();
+
+            for (Department department : departments) {
+                for (AcademicLevel academicLevel : academicLevels) {
+                    List<CurriculumTemplate> templates = getCurriculumTemplatesForDepartment(
+                            department.getName(), academicLevel.getName());
+
+                    for (CurriculumTemplate template : templates) {
+                        if (createCurriculumIfNotExists(school, department, academicLevel, template)) {
+                            totalCurriculumsCreated++;
+                        }
+                    }
+                }
+            }
+        }
+
+        log.info("Curriculum initialization completed. Created {} new curriculums", totalCurriculumsCreated);
+    }
+
+    private boolean createCurriculumIfNotExists(School school, Department department,
+                                                AcademicLevel academicLevel, CurriculumTemplate template) {
+        Optional<Curriculum> existingCurriculum = curriculumRepository
+                .findByNameAndDepartmentIdAndAcademicLevelId(template.name, department.getId(), academicLevel.getId());
+
+        if (existingCurriculum.isEmpty()) {
+            String curriculumCode = generateCurriculumCode(department.getCode(), academicLevel.getName(), template.suffix);
+            curriculumCode = ensureUniqueCurriculumCode(curriculumCode);
+
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime effectiveDate = now.minusMonths(6); // 6 months ago
+            LocalDateTime expiryDate = now.plusYears(template.durationYears + 1);
+
+            Curriculum curriculum = Curriculum.builder()
+                    .name(template.name)
+                    .code(curriculumCode)
+                    .durationSemesters(template.durationSemesters)
+                    .status(template.status)
+                    .effectiveDate(effectiveDate)
+                    .expiryDate(expiryDate)
+                    .isActive(true)
+                    .school(school)
+                    .department(department)
+                    .academicLevel(academicLevel)
+                    .build();
+
+            if (template.status == CurriculumStatus.APPROVED) {
+                curriculum.setApprovedAt(effectiveDate.plusDays(7));
+            }
+
+            curriculumRepository.save(curriculum);
+            log.info("Created curriculum: {} ({}) for {} - {} - {}",
+                    template.name, curriculumCode, school.getName(),
+                    department.getName(), academicLevel.getName());
+            return true;
+        } else {
+            log.debug("Curriculum already exists: {} for {} - {} - {}",
+                    template.name, school.getName(), department.getName(), academicLevel.getName());
+            return false;
+        }
+    }
+
+    private List<CurriculumTemplate> getCurriculumTemplatesForDepartment(String departmentName, String academicLevel) {
+
+        String baseName = "Bachelor";
+        int baseDuration = 8;
+        int baseYears = 4;
+
+        if ("Masters".equals(academicLevel)) {
+            baseName = "Master";
+            baseDuration = 4;
+            baseYears = 2;
+        } else if ("PhD".equals(academicLevel)) {
+            baseName = "Doctor of Philosophy";
+            baseDuration = 6;
+            baseYears = 3;
+        }
+
+
+        return new ArrayList<>(createDepartmentSpecificCurriculums(departmentName, baseName, baseDuration, baseYears));
+    }
+
+    private List<CurriculumTemplate> createDepartmentSpecificCurriculums(String departmentName,
+                                                                         String baseName, int baseDuration, int baseYears) {
+        List<CurriculumTemplate> templates = new ArrayList<>();
+
+        List<String> degreeVariations = getDegreeVariations(departmentName, baseName);
+        CurriculumStatus[] statuses = {CurriculumStatus.APPROVED, CurriculumStatus.UNDER_REVIEW,
+                CurriculumStatus.PENDING, CurriculumStatus.APPROVED};
+
+        int statusIndex = 0;
+        for (String variation : degreeVariations) {
+            CurriculumStatus status = statuses[statusIndex % statuses.length];
+
+            templates.add(new CurriculumTemplate(
+                    variation,
+                    baseDuration,
+                    baseYears,
+                    status,
+                    "V1"
+            ));
+
+            if (statusIndex % 3 == 0) {
+                templates.add(new CurriculumTemplate(
+                        variation + " (Revised)",
+                        baseDuration,
+                        baseYears,
+                        CurriculumStatus.UNDER_REVIEW,
+                        "V2"
+                ));
+            }
+
+            statusIndex++;
+        }
+
+        return templates;
+    }
+
+    private List<String> getDegreeVariations(String departmentName, String baseName) {
+        Map<String, List<String>> departmentVariations = new HashMap<>();
+
+        departmentVariations.put("Computer Science and Information Technology", Arrays.asList(
+                baseName + " of Science in Computer Science",
+                baseName + " of Science in Information Technology",
+                baseName + " of Science in Software Engineering",
+                baseName + " of Science in Cybersecurity"
+        ));
+
+        departmentVariations.put("Electrical and Electronic Engineering", Arrays.asList(
+                baseName + " of Engineering in Electrical Engineering",
+                baseName + " of Engineering in Electronic Engineering",
+                baseName + " of Engineering in Telecommunications",
+                baseName + " of Engineering in Power Systems"
+        ));
+
+        departmentVariations.put("Mechanical Engineering", Arrays.asList(
+                baseName + " of Engineering in Mechanical Engineering",
+                baseName + " of Engineering in Automotive Engineering",
+                baseName + " of Engineering in Manufacturing Engineering"
+        ));
+
+        departmentVariations.put("Civil Engineering", Arrays.asList(
+                baseName + " of Engineering in Civil Engineering",
+                baseName + " of Engineering in Structural Engineering",
+                baseName + " of Engineering in Environmental Engineering"
+        ));
+
+        // Business departments
+        departmentVariations.put("Business Administration", Arrays.asList(
+                baseName + " of Business Administration",
+                baseName + " of Business Administration in Management",
+                baseName + " of Business Administration in Entrepreneurship"
+        ));
+
+        departmentVariations.put("Economics", Arrays.asList(
+                baseName + " of Arts in Economics",
+                baseName + " of Science in Economics",
+                baseName + " of Arts in Development Economics"
+        ));
+
+        departmentVariations.put("Medicine", Arrays.asList(
+                baseName + " of Medicine and Surgery",
+                baseName + " of Medicine",
+                baseName + " of Science in Medical Sciences"
+        ));
+
+        departmentVariations.put("Nursing", Arrays.asList(
+                baseName + " of Science in Nursing",
+                baseName + " of Science in Community Health Nursing",
+                baseName + " of Science in Critical Care Nursing"
+        ));
+
+        addMoreDepartmentVariations(departmentVariations, baseName);
+
+        return departmentVariations.getOrDefault(departmentName,
+                Arrays.asList(baseName + " of Science in " + departmentName,
+                        baseName + " of Arts in " + departmentName));
+    }
+
+    private void addMoreDepartmentVariations(Map<String, List<String>> departmentVariations, String baseName) {
+        departmentVariations.put("Mathematics and Statistics", Arrays.asList(
+                baseName + " of Science in Mathematics",
+                baseName + " of Science in Statistics",
+                baseName + " of Science in Applied Mathematics"
+        ));
+
+        departmentVariations.put("Physics", Arrays.asList(
+                baseName + " of Science in Physics",
+                baseName + " of Science in Applied Physics",
+                baseName + " of Science in Theoretical Physics"
+        ));
+
+        departmentVariations.put("Primary Education", Arrays.asList(
+                baseName + " of Education in Primary Education",
+                baseName + " of Education in Early Childhood Education"
+        ));
+
+        departmentVariations.put("Private Law", Arrays.asList(
+                baseName + " of Laws",
+                baseName + " of Laws in Private Law"
+        ));
+
+        departmentVariations.put("Crop Science", Arrays.asList(
+                baseName + " of Science in Crop Science",
+                baseName + " of Science in Agronomy"
+        ));
+    }
+
+    private String generateCurriculumCode(String departmentCode, String academicLevel, String suffix) {
+        String levelCode = academicLevel.substring(0, Math.min(2, academicLevel.length())).toUpperCase();
+        return departmentCode + "-" + levelCode + "-" + suffix;
+    }
+
+    private String ensureUniqueCurriculumCode(String baseCode) {
+        String candidateCode = baseCode;
+        int counter = 1;
+
+        while (curriculumRepository.findByCode(candidateCode).isPresent()) {
+            candidateCode = baseCode + "-" + counter;
+            counter++;
+        }
+
+        return candidateCode;
+    }
+
     private String generateDepartmentCode(String departmentName) {
         String[] words = departmentName.split("\\s+");
         StringBuilder code = new StringBuilder();
@@ -337,15 +577,10 @@ public class DataInitializationService implements CommandLineRunner {
         return candidateCode;
     }
 
-    private static class SchoolData {
-        final String name;
-        final String code;
-        final String email;
+    private record SchoolData(String name, String code, String email) {
+    }
 
-        SchoolData(String name, String code, String email) {
-            this.name = name;
-            this.code = code;
-            this.email = email;
-        }
+    private record CurriculumTemplate(String name, int durationSemesters, int durationYears, CurriculumStatus status,
+                                      String suffix) {
     }
 }

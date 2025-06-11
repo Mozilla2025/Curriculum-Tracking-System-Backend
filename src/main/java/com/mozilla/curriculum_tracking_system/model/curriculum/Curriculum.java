@@ -20,8 +20,10 @@ import java.util.Set;
 @Builder
 @Entity
 @Table(name = "curriculums", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"name", "department_id", "academic_level_id"})
+        @UniqueConstraint(columnNames = {"name", "department_id", "academic_level_id"})
 })
+@EqualsAndHashCode(exclude = {"comments"})
+@ToString(exclude = {"comments", "school", "department", "academicLevel"})
 public class Curriculum {
 
     @Id
@@ -97,7 +99,6 @@ public class Curriculum {
         this.comments.remove(comment);
         comment.setCurriculum(null);
     }
-
 
     public void putUnderReview() {
         this.status = CurriculumStatus.UNDER_REVIEW;

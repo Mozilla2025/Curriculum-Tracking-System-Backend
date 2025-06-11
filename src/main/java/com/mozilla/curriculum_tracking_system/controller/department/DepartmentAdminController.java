@@ -42,7 +42,7 @@ public class DepartmentAdminController {
                 createdDepartment
         );
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
+        return ResponseEntity.ok(apiResponse);
     }
 
     /**

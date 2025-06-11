@@ -54,8 +54,6 @@ public class CurriculumController {
     public ResponseEntity<ApiResponse> searchCurriculums(
             @RequestBody CurriculumSearchCriteria criteria,
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
-
-
         CurriculumPageResponse curriculums = curriculumService.searchCurriculums(criteria, pageable);
 
         ApiResponse apiResponse = new ApiResponse(

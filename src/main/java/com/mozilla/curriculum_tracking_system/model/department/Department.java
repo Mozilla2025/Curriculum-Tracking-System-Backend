@@ -4,12 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import com.mozilla.curriculum_tracking_system.model.school.School;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,11 +16,14 @@ import java.util.Set;
 @Builder
 @Entity
 @Table(name = "departments", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"name", "school_id"}),
-    @UniqueConstraint(columnNames = {"code", "school_id"})
+        @UniqueConstraint(columnNames = {"name", "school_id"}),
+        @UniqueConstraint(columnNames = {"code", "school_id"})
 })
+@EqualsAndHashCode(exclude = {"curriculums", "school"})
+@ToString(exclude = {"curriculums", "school"})
 public class Department {
- @Id
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 

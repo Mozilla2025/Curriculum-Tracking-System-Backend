@@ -36,6 +36,12 @@ public class CacheConfig {
     @Value("${app.cache.ttl.schools:3600}")
     private int schoolCacheTtl;
 
+    @Value("${app.cache.ttl.curriculums:2700}")
+    private int curriculumCacheTtl;
+
+    @Value("${app.cache.ttl.curriculum-stats:300}")
+    private int curriculumStatsCacheTtl;
+
     @Value("${app.cache.ttl.general:900}")
     private int generalCacheTtl;
 
@@ -49,7 +55,6 @@ public class CacheConfig {
                 LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY
-
         );
 
         return mapper;
@@ -99,6 +104,7 @@ public class CacheConfig {
 
         addDepartmentCacheConfigurations(cacheConfigurations, defaultConfig);
         addSchoolCacheConfigurations(cacheConfigurations, defaultConfig);
+        addCurriculumCacheConfigurations(cacheConfigurations, defaultConfig);
 
         return cacheConfigurations;
     }
@@ -122,5 +128,24 @@ public class CacheConfig {
         cacheConfigurations.put(CacheConstants.SCHOOLS, defaultConfig.entryTtl(schoolTtl));
         cacheConfigurations.put(CacheConstants.SCHOOL_BY_ID, defaultConfig.entryTtl(schoolTtl));
         cacheConfigurations.put(CacheConstants.SCHOOL_EXISTS, defaultConfig.entryTtl(schoolTtl));
+    }
+
+    private void addCurriculumCacheConfigurations(Map<String, RedisCacheConfiguration> cacheConfigurations,
+                                                  RedisCacheConfiguration defaultConfig) {
+        Duration curriculumTtl = Duration.ofSeconds(curriculumCacheTtl);
+        Duration curriculumStatsTtl = Duration.ofSeconds(curriculumStatsCacheTtl);
+
+        cacheConfigurations.put(CacheConstants.CURRICULUMS, defaultConfig.entryTtl(curriculumTtl));
+        cacheConfigurations.put(CacheConstants.CURRICULUM_BY_ID, defaultConfig.entryTtl(curriculumTtl));
+        cacheConfigurations.put(CacheConstants.CURRICULUMS_BY_SCHOOL, defaultConfig.entryTtl(curriculumTtl));
+        cacheConfigurations.put(CacheConstants.CURRICULUMS_BY_DEPARTMENT, defaultConfig.entryTtl(curriculumTtl));
+        cacheConfigurations.put(CacheConstants.CURRICULUMS_BY_ACADEMIC_LEVEL, defaultConfig.entryTtl(curriculumTtl));
+        cacheConfigurations.put(CacheConstants.CURRICULUMS_SEARCH, defaultConfig.entryTtl(curriculumTtl));
+        cacheConfigurations.put(CacheConstants.CURRICULUMS_EXPIRING_SOON, defaultConfig.entryTtl(curriculumTtl));
+
+        cacheConfigurations.put(CacheConstants.CURRICULUM_EXISTS_BY_NAME_DEPT_LEVEL, defaultConfig.entryTtl(curriculumTtl));
+        cacheConfigurations.put(CacheConstants.CURRICULUM_EXISTS_BY_CODE, defaultConfig.entryTtl(curriculumTtl));
+
+        cacheConfigurations.put(CacheConstants.CURRICULUM_STATS, defaultConfig.entryTtl(curriculumStatsTtl));
     }
 }
