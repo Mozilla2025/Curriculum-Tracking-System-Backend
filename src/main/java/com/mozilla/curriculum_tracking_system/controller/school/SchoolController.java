@@ -34,18 +34,18 @@ public class SchoolController {
     private final CurriculumMapper curriculumMapper;
 
     @GetMapping
-    public ResponseEntity<List<School>> getAllSchools(){
+    public ResponseEntity<List<SchoolDto>> getAllSchools(){
 
         log.info("Fetching all schools"); //is this necessary, what does it do?
-        List<School> schools = schoolService.getAllSchools();
+        List<SchoolDto> schools = schoolService.getAllSchools();
         log.info("Found {} schools", schools.size());
         return ResponseEntity.ok(schools);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<School> getSchoolById(@Valid @PathVariable Long id){
+    public ResponseEntity<SchoolDto> getSchoolById(@Valid @PathVariable Long id){
         log.info("Fetching school with ID: {}", id);
-        School school = schoolService.getSchoolById(id);
+        SchoolDto school = schoolService.getSchoolById(id);
         log.info("Found school: {}", school.getName());
         return ResponseEntity.ok(school);
     }
@@ -53,20 +53,21 @@ public class SchoolController {
     @GetMapping("/{id}/departments")
     public ResponseEntity<Set<DepartmentDto>> getSchoolDepartments(@Valid @PathVariable Long id){
         log.info("Fetching departments for school ID: {}", id);
-        Set<Department> departments = schoolService.getSchoolDepartments(id);
-        log.info("Found {} departments for school ID: {}", departments);
-        Set<DepartmentDto> departmentDtos = departments.stream().map(departmentMapper::mapToDto).collect(Collectors.toSet());
-        return ResponseEntity.ok(departmentDtos);
+        Set<DepartmentDto> departments = schoolService.getSchoolDepartments(id);
+        log.info("Found {} departments for school ID: {}", departments.size(), id);
+        return ResponseEntity.ok(departments);
     }
 
     @GetMapping("/{id}/curricula")
     public ResponseEntity<Set<CurriculumDto>> getSchoolCurricula(@Valid @PathVariable Long id){
         log.info("Fetching curricula for school ID: {}", id);
-        Set<Curriculum> curricula = schoolService.getSchoolCurricula(id);
-        Set<CurriculumDto> curriculumDtos = curricula.stream().map(curriculumMapper::mapToDto).collect(Collectors.toSet());
-        return ResponseEntity.ok(curriculumDtos);
+        Set<CurriculumDto> curricula = schoolService.getSchoolCurricula(id);
+        return ResponseEntity.ok(curricula);
     }
 
-    @GetMapping("/{id}/curriculums/{academicLevel}")
-    public ResponseEntity<Set<CurriculumDto>> getSchoolCurriculaByLevel(@Valid @PathVariable Long id, )
+    @GetMapping("/{id}/curriculums/bachelor")
+    public ResponseEntity<Set<CurriculumDto>> getSchoolCurriculaByLevel(@Valid @PathVariable Long id, Long academicLevelId){
+        log.info("Fetching bachelor curricula for school ID: {}", id);
+        schoolService.getSchoolCurriculaByLevel(id);
+    }
 }
