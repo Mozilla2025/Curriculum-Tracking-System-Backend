@@ -66,8 +66,8 @@ public class SchoolController {
     }
 
     @GetMapping("/{id}/curriculums/bachelor")
-    public ResponseEntity<Set<CurriculumDto>> getSchoolCurriculaByLevel(@Valid @PathVariable Long id, Long academicLevelId){
+    public ResponseEntity<Set<CurriculumDto>> getSchoolCurriculaByLevel(@Valid @PathVariable Long id, String academicLevel){
         log.info("Fetching bachelor curricula for school ID: {}", id);
-        schoolService.getSchoolCurriculaByLevel(id);
+        schoolService.getSchoolCurriculaByLevel(id, academicLevel);
     }
 }
