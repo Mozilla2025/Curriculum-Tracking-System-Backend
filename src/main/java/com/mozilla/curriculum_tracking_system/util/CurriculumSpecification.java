@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.specification;
+package com.mozilla.curriculum_tracking_system.util;
 
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CurriculumSearchCriteria;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
