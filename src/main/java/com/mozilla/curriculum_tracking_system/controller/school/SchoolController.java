@@ -50,24 +50,4 @@ public class SchoolController {
         return ResponseEntity.ok(school);
     }
 
-    @GetMapping("/{id}/departments")
-    public ResponseEntity<Set<DepartmentDto>> getSchoolDepartments(@Valid @PathVariable Long id){
-        log.info("Fetching departments for school ID: {}", id);
-        Set<DepartmentDto> departments = schoolService.getSchoolDepartments(id);
-        log.info("Found {} departments for school ID: {}", departments.size(), id);
-        return ResponseEntity.ok(departments);
-    }
-
-    @GetMapping("/{id}/curricula")
-    public ResponseEntity<Set<CurriculumDto>> getSchoolCurricula(@Valid @PathVariable Long id){
-        log.info("Fetching curricula for school ID: {}", id);
-        Set<CurriculumDto> curricula = schoolService.getSchoolCurricula(id);
-        return ResponseEntity.ok(curricula);
-    }
-
-    @GetMapping("/{id}/curriculums/bachelor")
-    public ResponseEntity<Set<CurriculumDto>> getSchoolCurriculaByLevel(@Valid @PathVariable Long id, String academicLevel){
-        log.info("Fetching bachelor curricula for school ID: {}", id);
-        schoolService.getSchoolCurriculaByLevel(id, academicLevel);
-    }
 }
