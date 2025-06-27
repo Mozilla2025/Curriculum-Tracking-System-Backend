@@ -31,7 +31,7 @@ public class EmailService implements IEmailService {
     @Value("${app.email.from-name:Curriculum Tracking System}")
     private String fromName;
 
-    @Value("${app.frontend.url:http://localhost:5173}")
+    @Value("${app.frontend.url}")
     private String frontendUrl;
 
     @Override
