@@ -84,25 +84,26 @@ public class SecurityConfig {
                 return http.build();
         }
 
-    @Bean
-    public CorsConfigurationSource configurationSource() {
-        CorsConfiguration corsConfiguration = new CorsConfiguration();
+        @Bean
+        public CorsConfigurationSource configurationSource() {
+                CorsConfiguration corsConfiguration = new CorsConfiguration();
 
-        corsConfiguration.setAllowedOriginPatterns(List.of(
-                "https://curiculum-tracking-system-frontend.vercel.app"
-                ));
+                corsConfiguration.setAllowedOriginPatterns(List.of(
+                                "https://curiculum-tracking-system-frontend.vercel.app",
+                                "https://1rrq4qld-5173.uks1.devtunnels.ms",
+                                "http://localhost:5173"));
 
-        corsConfiguration.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                corsConfiguration.setAllowedMethods(Arrays.asList(
+                                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
-        corsConfiguration.setAllowedHeaders(Arrays.asList(
-                "Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
+                corsConfiguration.setAllowedHeaders(Arrays.asList(
+                                "Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
 
-        corsConfiguration.setAllowCredentials(true);
-        corsConfiguration.setMaxAge(3600L);
+                corsConfiguration.setAllowCredentials(true);
+                corsConfiguration.setMaxAge(3600L);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", corsConfiguration);
-        return source;
-    }
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", corsConfiguration);
+                return source;
+        }
 }
