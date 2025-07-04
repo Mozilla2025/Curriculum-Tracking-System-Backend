@@ -13,12 +13,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class CurriculumDto {
-
+    private Long id;
     private String name;
     private String code;
     private Integer durationSemesters;
     private CurriculumStatus status;
-    private Long CreatedBy;
+    private Long createdBy;
     private Long approvedBy;
     private LocalDateTime approvedAt;
     private LocalDateTime effectiveDate;
@@ -31,4 +31,5 @@ public class CurriculumDto {
     private Long departmentId;
     private String departmentName;
     private String academicLevelName;
+
 }

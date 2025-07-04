@@ -20,8 +20,10 @@ import java.util.Set;
 @Builder
 @Entity
 @Table(name = "curriculums", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"name", "department_id", "academic_level_id"})
+        @UniqueConstraint(columnNames = {"name", "department_id", "academic_level_id"})
 })
+@EqualsAndHashCode(exclude = {"comments"})
+@ToString(exclude = {"comments", "school", "department", "academicLevel"})
 public class Curriculum {
 
     @Id
@@ -41,12 +43,6 @@ public class Curriculum {
     @Column(nullable = false, length = 20)
     @Builder.Default
     private CurriculumStatus status = CurriculumStatus.PENDING;
-
-    @Column(name = "created_by", nullable = false)
-    private Long createdBy;
-
-    @Column(name = "approved_by")
-    private Long approvedBy;
 
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
@@ -102,18 +98,6 @@ public class Curriculum {
     public void removeComment(Comment comment) {
         this.comments.remove(comment);
         comment.setCurriculum(null);
-    }
-
-    public void approve(Long approvedBy) {
-        this.status = CurriculumStatus.APPROVED;
-        this.approvedBy = approvedBy;
-        this.approvedAt = LocalDateTime.now();
-    }
-
-    public void reject(Long rejectedBy) {
-        this.status = CurriculumStatus.REJECTED;
-        this.approvedBy = rejectedBy;
-        this.approvedAt = LocalDateTime.now();
     }
 
     public void putUnderReview() {

@@ -1,19 +1,25 @@
 spring:
   application:
     name: curriculum-tracking-system
-  config:
-    import: "optional:file:keys.properties"
   datasource:
-    url: ${db.url}
-    username: ${db.username}
-    password: ${db.password}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         default_schema: public
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
   security:
     method:
       global-method-security:
@@ -23,12 +29,12 @@ spring:
     suffix: .html
     mode: HTML
     encoding: UTF-8
-    cache: false
+    cache: true
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${mail.username}
-    password: ${mail.password}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -38,25 +44,21 @@ spring:
             required: true
           ssl:
             trust: smtp.gmail.com
-
-  # Redis Cloud Configuration
   data:
     redis:
-      host: ${redis.host}
-      port: ${redis.port:10457}
-      password: ${redis.password}
-      database: ${redis.database}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:10457}
+      password: ${REDIS_PASSWORD}
+      database: ${REDIS_DATABASE:0}
       timeout: 5000ms
       ssl:
-        enabled: ${redis.ssl.enabled:true}
+        enabled: ${REDIS_SSL_ENABLED:true}
       jedis:
         pool:
           max-active: 8
           max-idle: 8
           min-idle: 0
           max-wait: -1ms
-
-  # Cache Configuration
   cache:
     type: redis
     redis:
@@ -66,45 +68,49 @@ spring:
       key-prefix: curriculum-system
 
 server:
-  port: 8090
+  port: 80
   servlet:
     context-path: /
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
 app:
-  jwtSecret: ${jwt.secret}
-  jwtExpirationMs: ${jwt.expiration.ms}
-  jwtRefreshExpirationMs: ${jwt.refresh.expiration.ms}
+  jwtSecret: ${JWT_SECRET}
+  jwtExpirationMs: ${JWT_EXPIRATION_MS}
+  jwtRefreshExpirationMs: ${JWT_REFRESH_EXPIRATION_MS}
   admin:
-    username: ${admin.username}
-    email: ${admin.email}
-    password: ${admin.password}
+    username: ${ADMIN_USERNAME}
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}
   email:
     from-name: Curriculum Tracking System
   frontend:
-    url: ${frontend.url}
+    url: https://curiculum-tracking-system-frontend.vercel.app
   password-reset:
     token-expiry-hours: 24
   cache:
     ttl:
       departments: 1800
       schools: 3600
+
 api:
   prefix: api/v1
+
 logging:
   level:
     com:
       mozilla:
-        curriculum_tracking_system: DEBUG
+        curriculum_tracking_system: INFO
     org:
       springframework:
-        security: DEBUG
-        orm:
-          jpa: DEBUG
-        transaction: DEBUG
-      hibernate:
-        SQL: DEBUG
-        type:
-          descriptor:
-            sql:
-              BasicBinder: TRACE
+        security: WARN
+    root: INFO
   pattern:
-    console: '%d{yyyy-MM-dd HH:mm:ss} - %msg%n'
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
