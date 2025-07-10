@@ -25,6 +25,7 @@
 		<maven.compiler.target>17</maven.compiler.target>
 		<firebase-admin.version>9.4.3</firebase-admin.version>
 		<google-cloud.version>2.52.2</google-cloud.version>
+		<flyway-db.version>11.10.1</flyway-db.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	
@@ -90,6 +91,13 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+			<version>${flyway-db.version}</version>
 			<scope>runtime</scope>
 		</dependency>
 		
