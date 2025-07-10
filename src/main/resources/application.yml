@@ -69,6 +69,15 @@ server:
   port: 8090
   servlet:
     context-path: /
+
+
+firebase:
+  bucket-name: authentication-1a0c4.appspot.com
+  credentials:
+    path: curriculum-service.json
+
+
+
 app:
   jwtSecret: ${jwt.secret}
   jwtExpirationMs: ${jwt.expiration.ms}
