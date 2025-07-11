@@ -26,9 +26,6 @@ public interface IAuthenticationService {
     boolean hasRole(String token, String roleName);
     boolean hasAnyRole(String token, String... roleNames);
     boolean isAdmin(String token);
-    boolean isDean(String token);
-    boolean isViceChancellor(String token);
+    boolean isQAAdmin(String token);
 
-    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
-    boolean isHeadOfDepartment(String token);
 }

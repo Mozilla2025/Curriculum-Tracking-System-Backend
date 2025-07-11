@@ -1,5 +1,6 @@
 package com.mozilla.curriculum_tracking_system.util;
 
+import com.mozilla.curriculum_tracking_system.model.roles.Role;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -44,14 +45,17 @@ public class JwtUtil {
             claims.put("lastName", user.getLastName());
 
             List<String> roleNames = user.getRoles().stream()
-            .map(role -> role.getName())
+            .map(Role::getName)
             .collect(Collectors.toList());
             claims.put("roles", roleNames);
 
+            claims.put("isAssistantRole", roleNames.contains("ASSISTANT"));
+            claims.put("isSchoolBoard", roleNames.contains("SCHOOL_BOARD"));
+            claims.put("isSenate", roleNames.contains("SENATE"));
+            claims.put("isSeniorAdmin", roleNames.contains("QA"));
             claims.put("isAdmin", roleNames.contains("ADMIN"));
             claims.put("isDean", roleNames.contains("DEAN"));
             claims.put("isHOD", roleNames.contains("HOD"));
-            claims.put("isViceChancellor", roleNames.contains("VICE_CHANCELLOR"));
         }
 
         return createToken(claims, userDetails.getUsername(), jwtExpirationMs);
@@ -113,8 +117,20 @@ public class JwtUtil {
         return getClaimsFromToken(token, claims -> (Boolean) claims.get("isHOD"));
     }
 
-    public Boolean isViceChancellorFromToken(String token) {
-        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isViceChancellor"));
+    public Boolean isSeniorAdinFromToken(String token) {
+        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isSeniorAdmin") );
+    }
+
+    public Boolean isAssistantRoleFromToken(String token) {
+        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isAssistantRole") );
+    }
+
+    public Boolean isSchoolBoardFromToken(String token) {
+        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isSchoolBoard") );
+    }
+
+    public Boolean isSenateFromToken(String token) {
+        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isSenate"));
     }
 
     public String getFirstNameFromToken(String token) {

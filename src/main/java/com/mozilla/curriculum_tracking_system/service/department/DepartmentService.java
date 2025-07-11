@@ -259,7 +259,7 @@ public class DepartmentService implements IDepartmentService {
             throw new UnauthorizedException("Invalid or expired token");
         }
 
-        if (!authenticationService.isAdmin(token)) {
+        if (authenticationService.isAdmin(token) || authenticationService.isQAAdmin(token)) {
             throw new UnauthorizedException("Admin access required for this operation");
         }
     }

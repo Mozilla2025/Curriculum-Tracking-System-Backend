@@ -44,7 +44,6 @@ public class AuthController {
         profile.put("firstName", authenticationService.getFirstNameFromToken(token));
         profile.put("lastName", authenticationService.getLastNameFromToken(token));
         profile.put("roles", authenticationService.getRolesFromToken(token));
-        profile.put("permissions", buildPermissions(token));
 
         return ResponseEntity.ok(new ApiResponse("Successfully retrieved profile", profile));
     }
@@ -62,7 +61,6 @@ public class AuthController {
             response.put("userId", authenticationService.getUserIdFromToken(token));
             response.put("email", authenticationService.getEmailFromToken(token));
             response.put("roles", authenticationService.getRolesFromToken(token));
-            response.put("permissions", buildPermissions(token));
         } else {
             response.put("message", "Invalid or expired token");
         }
@@ -76,7 +74,6 @@ public class AuthController {
 
         Map<String, Object> roleInfo = new HashMap<>();
         roleInfo.put("roles", authenticationService.getRolesFromToken(token));
-        roleInfo.put("permissions", buildPermissions(token));
 
         return ResponseEntity.ok(new ApiResponse("Success", roleInfo));
     }
@@ -107,49 +104,8 @@ public class AuthController {
         return ResponseEntity.ok(new ApiResponse("Success", response));
     }
 
-    /**
-     * Get basic user information (subset of profile)
-     */
-    @GetMapping("/user-info")
-    public ResponseEntity<ApiResponse> getUserInfo(HttpServletRequest request) {
-        String token = extractTokenFromRequest(request);
 
-        Map<String, Object> userInfo = new HashMap<>();
-        userInfo.put("userId", authenticationService.getUserIdFromToken(token));
-        userInfo.put("username", authenticationService.getUsernameFromToken(token));
-        userInfo.put("email", authenticationService.getEmailFromToken(token));
-        userInfo.put("firstName", authenticationService.getFirstNameFromToken(token));
-        userInfo.put("lastName", authenticationService.getLastNameFromToken(token));
 
-        return ResponseEntity.ok(new ApiResponse("Success", userInfo));
-    }
-
-    /**
-     * Get user permissions based on roles
-     */
-    @GetMapping("/permissions")
-    public ResponseEntity<ApiResponse> getUserPermissions(HttpServletRequest request) {
-        String token = extractTokenFromRequest(request);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("permissions", buildPermissions(token));
-
-        return ResponseEntity.ok(new ApiResponse("Success", response));
-    }
-
-    /**
-     * Build permissions map based on user roles
-     */
-    private Map<String, Boolean> buildPermissions(String token) {
-        Map<String, Boolean> permissions = new HashMap<>();
-        permissions.put("isAdmin", authenticationService.isAdmin(token));
-        permissions.put("isDean", authenticationService.isDean(token));
-        permissions.put("isViceChancellor", authenticationService.isViceChancellor(token));
-
-        permissions.put("canManageUsers", authenticationService.isAdmin(token));
-
-        return permissions;
-    }
 
     /**
      * Extract JWT token from Authorization header

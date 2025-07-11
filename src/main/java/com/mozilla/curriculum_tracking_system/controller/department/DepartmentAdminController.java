@@ -1,6 +1,5 @@
 package com.mozilla.curriculum_tracking_system.controller.department;
 
-import com.mozilla.curriculum_tracking_system.annotation.AdminOnly;
 import com.mozilla.curriculum_tracking_system.dto.department.CreateDepartmentRequest;
 import com.mozilla.curriculum_tracking_system.dto.department.DepartmentDto;
 import com.mozilla.curriculum_tracking_system.dto.department.UpdateDepartmentRequest;
@@ -10,7 +9,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,8 +23,6 @@ public class DepartmentAdminController {
      * Create a new department
      */
     @PostMapping("/create-department")
-    @PreAuthorize("hasRole('ADMIN')")
-    @AdminOnly(message = "Only administrators can create departments")
     public ResponseEntity<ApiResponse> createDepartment(
             @Valid @RequestBody CreateDepartmentRequest request,
             @RequestHeader("Authorization") String authorizationHeader) {
@@ -48,8 +44,6 @@ public class DepartmentAdminController {
      * Update an existing department
      */
     @PutMapping("/update/{departmentId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @AdminOnly(message = "Only administrators can update departments")
     public ResponseEntity<ApiResponse> updateDepartment(
             @PathVariable Long departmentId,
             @Valid @RequestBody UpdateDepartmentRequest request,
@@ -73,8 +67,6 @@ public class DepartmentAdminController {
      * Delete a department
      */
     @DeleteMapping("/delete/{departmentId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @AdminOnly(message = "Only administrators can delete departments")
     public ResponseEntity<ApiResponse> deleteDepartment(
             @PathVariable Long departmentId,
             @RequestHeader("Authorization") String authorizationHeader) {

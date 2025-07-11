@@ -50,14 +50,14 @@ public class UserController {
     }
     
     @GetMapping("/get-all-users")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('VICE_CHANCELLOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> getAllUsers() {
         List<UserResponse> users = userManagementService.getAllUsers();
         return ResponseEntity.ok(new ApiResponse("Successfully retrieved users", users));
     }
     
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('VICE_CHANCELLOR') or @userManagementService.isCurrentUser(#userId)")
+    @PreAuthorize("hasRole('ADMIN') or @userManagementService.isCurrentUser(#userId)")
     public ResponseEntity<ApiResponse> getUserById(@PathVariable Long userId) {
         UserResponse user = userManagementService.getUserById(userId);
         return ResponseEntity.ok(new ApiResponse("Successfully retrieved user", user));
