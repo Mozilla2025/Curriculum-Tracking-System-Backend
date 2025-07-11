@@ -56,30 +56,53 @@ public class SecurityConfig {
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 http
-                                .cors(cors -> cors.configurationSource(configurationSource()))
-                                .csrf(AbstractHttpConfigurer::disable)
-                                .exceptionHandling(ex -> ex
-                                                .authenticationEntryPoint(jwtAuthenticationEntryPoint))
-                                .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                                .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(
-                                                                "/api/v1/auth/login",
-                                                                "/api/v1/auth/password/**",
-                                                                "/api/v1/auth/refresh",
-                                                                "/actuator/health")
-                                                .permitAll()
+                        .cors(cors -> cors.configurationSource(configurationSource()))
+                        .csrf(AbstractHttpConfigurer::disable)
+                        .exceptionHandling(ex -> ex
+                                .authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                        .sessionManagement(session -> session
+                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .authorizeHttpRequests(auth -> auth
+                                .requestMatchers(
+                                        "/actuator/health",
+                                        "/api/v1/users/**"
+                                ).permitAll()
 
-                                                .requestMatchers(
-                                                                "/api/v1/auth/register",
-                                                                "/api/v1/users/create",
-                                                                "/api/v1/users/assign-role",
-                                                                "/api/v1/users/admin/**")
-                                                .hasRole("ADMIN")
+                                .requestMatchers(
+                                        "/api/v1/admin/**"
+                                ).hasAnyRole("ADMIN", "QA")
 
-                                                .anyRequest().authenticated())
-                                .authenticationProvider(authenticationProvider())
-                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                                .requestMatchers(
+                                        "/api/v1/tracking/curriculums/initiate",
+                                        "/api/v1/tracking/curriculums/*/assign/**",
+                                        "/api/v1/tracking/curriculums/*/notes",
+                                        "/api/v1/tracking/curriculums/stats"
+                                ).hasRole("QA")
+
+                                .requestMatchers(
+                                        "/api/v1/tracking/curriculums/stage/SCHOOL_BOARD/**"
+                                ).hasAnyRole("QA", "SCHOOL_BOARD")
+
+                                .requestMatchers(
+                                        "/api/v1/tracking/curriculums/stage/DEAN_COMMITTEE/**"
+                                ).hasAnyRole("QA", "DEAN")
+
+                                .requestMatchers(
+                                        "/api/v1/tracking/curriculums/stage/SENATE/**"
+                                ).hasAnyRole("QA", "SENATE")
+
+                                .requestMatchers(
+                                        "/api/v1/tracking/curriculums/stage/QA_INTERNAL_REVIEW/**",
+                                        "/api/v1/tracking/curriculums/stage/VICE_CHANCELLOR_REVIEW/**",
+                                        "/api/v1/tracking/curriculums/stage/CUE_EXTERNAL_REVIEW/**"
+                                ).hasRole("QA")
+
+                                .requestMatchers("/api/v1/tracking/**").authenticated()
+
+
+                                .anyRequest().authenticated())
+                        .authenticationProvider(authenticationProvider())
+                        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
                 return http.build();
         }
@@ -89,15 +112,17 @@ public class SecurityConfig {
                 CorsConfiguration corsConfiguration = new CorsConfiguration();
 
                 corsConfiguration.setAllowedOriginPatterns(List.of(
-                                "https://curiculum-tracking-system-frontend.vercel.app",
-                                "https://1rrq4qld-5173.uks1.devtunnels.ms",
-                                "http://localhost:5173"));
+                        "https://curiculum-tracking-system-frontend.vercel.app",
+                        "https://1rrq4qld-5173.uks1.devtunnels.ms",
+                        "http://localhost:5173",
+                        "http://localhost:3000"
+                ));
 
                 corsConfiguration.setAllowedMethods(Arrays.asList(
-                                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                        "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
                 corsConfiguration.setAllowedHeaders(Arrays.asList(
-                                "Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
+                        "Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
 
                 corsConfiguration.setAllowCredentials(true);
                 corsConfiguration.setMaxAge(3600L);

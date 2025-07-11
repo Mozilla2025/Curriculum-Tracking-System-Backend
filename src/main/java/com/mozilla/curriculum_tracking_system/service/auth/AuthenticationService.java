@@ -228,7 +228,7 @@ public class AuthenticationService implements IAuthenticationService {
     public boolean isAdmin(String token) {
         try {
             Boolean isAdmin = jwtUtil.isAdminFromToken(token);
-            return isAdmin == null || !isAdmin;
+            return Boolean.TRUE.equals(isAdmin);
         } catch (Exception e) {
             return false;
         }
@@ -239,11 +239,12 @@ public class AuthenticationService implements IAuthenticationService {
     public boolean isQAAdmin(String token) {
         try {
             Boolean isQAAdmin = jwtUtil.isSeniorAdinFromToken(token);
-            return isQAAdmin == null || !isQAAdmin;
+            return Boolean.TRUE.equals(isQAAdmin);
         } catch (Exception e) {
             return false;
         }
     }
+
 
 
     private void validateUserAccount(User user) {
