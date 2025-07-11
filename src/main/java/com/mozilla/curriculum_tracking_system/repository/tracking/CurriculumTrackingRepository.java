@@ -120,9 +120,9 @@ public interface CurriculumTrackingRepository extends JpaRepository<CurriculumTr
     List<CurriculumTracking> findByInitiatedAtBetween(@Param("startDate") LocalDateTime startDate,
                                                       @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT AVG(EXTRACT(DAY FROM (ct.completedAt - ct.initiatedAt))) " +
+    @Query(value = "SELECT AVG(EXTRACT(DAY FROM (ct.completedAt - ct.initiatedAt))) " +
             "FROM CurriculumTracking ct " +
-            "WHERE ct.completedAt IS NOT NULL")
+            "WHERE ct.completedAt IS NOT NULL", nativeQuery = true)
     Double findAverageCompletionTimeInDays();
 
     @Query("SELECT ct FROM CurriculumTracking ct " +
