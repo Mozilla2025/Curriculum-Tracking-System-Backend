@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("${api.prefix}/auth")
+@RequestMapping("${api.prefix}/users/auth")
 @RequiredArgsConstructor
 public class AuthController {
 

@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("${api.prefix}/user/departments")
+@RequestMapping("${api.prefix}/users/departments")
 @RequiredArgsConstructor
 @Slf4j
 public class DepartmentController {

@@ -16,7 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("${api.prefix}/auth/password")
+@RequestMapping("${api.prefix}/users/auth/password")
 @RequiredArgsConstructor
 public class PasswordResetController {
 
