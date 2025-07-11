@@ -241,26 +241,25 @@ public class UserManagementService implements IUserManagementService {
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> {
-                    return new ResourceNotFoundException("User not found with ID: " + userId);
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
     }
 
     private Role findRoleByName(String roleName) {
         return roleRepository.findByName(roleName)
-                .orElseThrow(() -> {
-                    return new ResourceNotFoundException("Role not found: " + roleName);
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleName));
     }
 
     private void validateAdminRoleRemoval(String roleName, User user) {
         if (RoleConstants.ADMIN.equals(roleName)) {
             try {
                 long adminCount = userRepository.countUsersWithRole(RoleConstants.ADMIN);
-                boolean userIsAdmin = user.getRoles().stream()
-                        .anyMatch(role -> RoleConstants.ADMIN.equals(role.getName()));
 
-                if (adminCount <= 1 && userIsAdmin) {
+                if (isQAAdmin(user)) {
+                    throw new BadRequestException("Cannot remove senior admin.");
+
+                }
+
+                if (adminCount <= 1 && isUserAdmin(user)) {
                     throw new BadRequestException("Cannot remove admin role from the last admin user");
                 }
             } catch (BadRequestException e) {
@@ -272,6 +271,10 @@ public class UserManagementService implements IUserManagementService {
     }
 
     private void validateAdminStatusUpdate(User user, boolean enabled) {
+        if (isQAAdmin(user)) {
+            throw new BadRequestException("Cannot disable the senior admin user");
+
+        }
         if (!enabled && isUserAdmin(user)) {
             try {
                 long enabledAdminCount = userRepository.countEnabledUsersWithRole(RoleConstants.ADMIN);
@@ -287,6 +290,9 @@ public class UserManagementService implements IUserManagementService {
     }
 
     private void validateAdminDeletion(User user) {
+        if (isQAAdmin(user)) {
+            throw new BadRequestException("Senior Administrator cannot be deleted");
+        }
         if (isUserAdmin(user)) {
             try {
                 long adminCount = userRepository.countUsersWithRole(RoleConstants.ADMIN);
@@ -304,6 +310,11 @@ public class UserManagementService implements IUserManagementService {
     private boolean isUserAdmin(User user) {
         return user.getRoles().stream()
                 .anyMatch(role -> RoleConstants.ADMIN.equals(role.getName()));
+    }
+
+    private boolean isQAAdmin(User user) {
+        return user.getRoles().stream()
+                .anyMatch(role -> RoleConstants.QA.equals(role.getName()));
     }
 
     @Override

@@ -52,11 +52,11 @@ public class DataInitializationService implements CommandLineRunner {
     public void run(String... args) {
         log.info("Starting system data initialization...");
 
-//        initializeRoles();
-//        initializeDefaultAdmin();
-//        initializeAcademicLevels();
-//        initializeSchoolsAndDepartments();
-//        initializeCurriculums();
+        initializeRoles();
+        initializeDefaultAdmin();
+        initializeAcademicLevels();
+        initializeSchoolsAndDepartments();
+        initializeCurriculums();
 
         log.info("System data initialization completed successfully!");
     }
@@ -65,10 +65,12 @@ public class DataInitializationService implements CommandLineRunner {
         log.info("Initializing system roles...");
 
         createRoleIfNotExists(RoleConstants.ADMIN, "System Administrator with full access");
-        createRoleIfNotExists(RoleConstants.VICE_CHANCELLOR, "Vice Chancellor of the institution");
         createRoleIfNotExists(RoleConstants.DEAN, "Dean of a faculty or school");
         createRoleIfNotExists(RoleConstants.HEAD_OF_DEPARTMENT, "Head of a department");
         createRoleIfNotExists(RoleConstants.ASSISTANT_ROLE, "Assistant roles to dean");
+        createRoleIfNotExists(RoleConstants.QA, "Senior system administrator");
+        createRoleIfNotExists(RoleConstants.SCHOOL_BOARD, "school board management");
+        createRoleIfNotExists(RoleConstants.SENATE, "Senate committee");
 
         log.info("Role initialization completed");
     }
@@ -94,7 +96,7 @@ public class DataInitializationService implements CommandLineRunner {
         if (adminCount == 0) {
             log.info("No admin user found. Creating default admin user...");
 
-            Role adminRole = roleRepository.findByName(RoleConstants.ADMIN)
+            Role adminRole = roleRepository.findByName(RoleConstants.QA)
                     .orElseThrow(() -> new RuntimeException("Admin role not found"));
 
             User adminUser = User.builder()

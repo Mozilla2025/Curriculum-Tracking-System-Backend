@@ -4,6 +4,7 @@ import com.mozilla.curriculum_tracking_system.dto.auth.LoginRequest;
 import com.mozilla.curriculum_tracking_system.dto.auth.LoginResponse;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
+import com.mozilla.curriculum_tracking_system.model.roles.Role;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import com.mozilla.curriculum_tracking_system.util.JwtUtil;
@@ -52,7 +53,7 @@ public class AuthenticationService implements IAuthenticationService {
             String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
 
             Set<String> roles = user.getRoles().stream()
-                    .map(role -> role.getName())
+                    .map(Role::getName)
                     .collect(Collectors.toSet());
 
             return LoginResponse.builder()
@@ -98,7 +99,7 @@ public class AuthenticationService implements IAuthenticationService {
             String newAccessToken = jwtUtil.generateAccessToken(user);
 
             Set<String> roles = user.getRoles().stream()
-                    .map(role -> role.getName())
+                    .map(Role::getName)
                     .collect(Collectors.toSet());
 
             return LoginResponse.builder()
@@ -127,14 +128,10 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     private Authentication authenticateUser(LoginRequest request) {
-        try {
-            return authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            request.getUsername(),
-                            request.getPassword()));
-        } catch (AuthenticationException e) {
-            throw e;
-        }
+        return authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getUsername(),
+                        request.getPassword()));
     }
 
     @Override
@@ -231,7 +228,7 @@ public class AuthenticationService implements IAuthenticationService {
     public boolean isAdmin(String token) {
         try {
             Boolean isAdmin = jwtUtil.isAdminFromToken(token);
-            return isAdmin != null && isAdmin;
+            return isAdmin == null || !isAdmin;
         } catch (Exception e) {
             return false;
         }
@@ -239,32 +236,10 @@ public class AuthenticationService implements IAuthenticationService {
 
     @Override
     @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
-    public boolean isDean(String token) {
+    public boolean isQAAdmin(String token) {
         try {
-            Boolean isDean = jwtUtil.isDeanFromToken(token);
-            return isDean != null && isDean;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    @Override
-    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
-    public boolean isViceChancellor(String token) {
-        try {
-            Boolean isViceChancellor = jwtUtil.isViceChancellorFromToken(token);
-            return isViceChancellor != null && isViceChancellor;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
-    @Override
-    public boolean isHeadOfDepartment(String token) {
-        try {
-            Boolean isHOD = jwtUtil.isHeadOfDepartmentFromToken(token);
-            return isHOD != null && isHOD;
+            Boolean isQAAdmin = jwtUtil.isSeniorAdinFromToken(token);
+            return isQAAdmin == null || !isQAAdmin;
         } catch (Exception e) {
             return false;
         }

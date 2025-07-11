@@ -321,7 +321,7 @@ public class CurriculumService implements ICurriculumService {
             throw new UnauthorizedException("Invalid or expired token");
         }
 
-        if (!authenticationService.isAdmin(authToken)) {
+        if (authenticationService.isAdmin(authToken) || authenticationService.isQAAdmin(authToken)) {
             throw new UnauthorizedException("Admin access required for this operation");
         }
     }

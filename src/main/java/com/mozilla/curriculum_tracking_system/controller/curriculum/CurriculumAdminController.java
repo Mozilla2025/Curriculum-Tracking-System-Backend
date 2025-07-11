@@ -1,6 +1,5 @@
 package com.mozilla.curriculum_tracking_system.controller.curriculum;
 
-import com.mozilla.curriculum_tracking_system.annotation.AdminOnly;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CreateCurriculumRequest;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CurriculumDto;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CurriculumStatusStats;
@@ -11,7 +10,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,8 +22,6 @@ public class CurriculumAdminController {
 
 
     @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN')")
-    @AdminOnly(message = "Only administrators can create curriculums")
     public ResponseEntity<ApiResponse> createCurriculum(
             @Valid @RequestBody CreateCurriculumRequest request,
             @RequestHeader("Authorization") String authorizationHeader) {
@@ -43,8 +39,6 @@ public class CurriculumAdminController {
     }
 
     @PutMapping("/update/{curriculumId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @AdminOnly(message = "Only administrators can update curriculums")
     public ResponseEntity<ApiResponse> updateCurriculum(
             @PathVariable Long curriculumId,
             @Valid @RequestBody UpdateCurriculumRequest request,
@@ -64,8 +58,6 @@ public class CurriculumAdminController {
 
 
     @DeleteMapping("/delete/{curriculumId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @AdminOnly(message = "Only administrators can delete curriculums")
     public ResponseEntity<ApiResponse> deleteCurriculum(
             @PathVariable Long curriculumId,
             @RequestHeader("Authorization") String authorizationHeader) {
@@ -83,8 +75,6 @@ public class CurriculumAdminController {
     }
 
     @DeleteMapping("/permanent-delete/{curriculumId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @AdminOnly(message = "Only administrators can permanently delete curriculums")
     public ResponseEntity<ApiResponse> permanentlyDeleteCurriculum(
             @PathVariable Long curriculumId,
             @RequestHeader("Authorization") String authorizationHeader) {
@@ -102,8 +92,6 @@ public class CurriculumAdminController {
     }
 
     @PutMapping("/review/{curriculumId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @AdminOnly(message = "Only administrators can put curriculums under review")
     public ResponseEntity<ApiResponse> putCurriculumUnderReview(
             @PathVariable Long curriculumId,
             @RequestHeader("Authorization") String authorizationHeader) {
@@ -122,8 +110,6 @@ public class CurriculumAdminController {
 
 
     @PutMapping("/toggle-status/{curriculumId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @AdminOnly(message = "Only administrators can toggle curriculum status")
     public ResponseEntity<ApiResponse> toggleCurriculumStatus(
             @PathVariable Long curriculumId,
             @RequestHeader("Authorization") String authorizationHeader) {
@@ -141,8 +127,6 @@ public class CurriculumAdminController {
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("hasRole('ADMIN')")
-    @AdminOnly(message = "Only administrators can view curriculum statistics")
     public ResponseEntity<ApiResponse> getCurriculumStats() {
 
 
@@ -158,8 +142,6 @@ public class CurriculumAdminController {
 
 
     @GetMapping("/expiring-soon")
-    @PreAuthorize("hasRole('ADMIN')")
-    @AdminOnly(message = "Only administrators can view expiring curriculums")
     public ResponseEntity<ApiResponse> getCurriculumsExpiringSoon(
             @RequestParam(defaultValue = "30") int days) {
 
