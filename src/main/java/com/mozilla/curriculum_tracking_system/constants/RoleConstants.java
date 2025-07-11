@@ -12,6 +12,6 @@ public class RoleConstants {
     public static final String SENATE = "SENATE";
 
     private RoleConstants() {
-        
+
     }
 }

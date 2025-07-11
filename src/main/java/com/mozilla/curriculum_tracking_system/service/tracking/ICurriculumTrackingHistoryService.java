@@ -65,4 +65,7 @@ public interface ICurriculumTrackingHistoryService {
      * Get overdue history items
      */
     List<CurriculumTrackingHistoryDto> getOverdueHistoryItems();
+
+    void flushHistoryChanges();
+
 }

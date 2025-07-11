@@ -101,7 +101,6 @@ public class DepartmentController {
     }
 
 
-
     /**
      * Get department count by school ID
      */

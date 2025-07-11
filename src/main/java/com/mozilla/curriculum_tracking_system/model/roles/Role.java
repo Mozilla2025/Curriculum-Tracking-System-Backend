@@ -3,12 +3,7 @@ package com.mozilla.curriculum_tracking_system.model.roles;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -21,7 +16,7 @@ import java.util.Set;
 @Builder
 @Entity
 @EqualsAndHashCode(exclude = {"users"})
-@ToString(exclude = {"users"}) 
+@ToString(exclude = {"users"})
 public class Role {
 
     @Id
@@ -34,7 +29,7 @@ public class Role {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @JsonIgnore 
+    @JsonIgnore
     @ManyToMany(mappedBy = "roles", fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @Builder.Default
     private Set<User> users = new HashSet<>();

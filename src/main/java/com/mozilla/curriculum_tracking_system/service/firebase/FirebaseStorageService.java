@@ -26,20 +26,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class FirebaseStorageService implements IFirebaseStorageService{
-
-    private final Storage storage;
-
-    @Value("${firebase.bucket-name}")
-    private String bucketName;
-
-    @Value("${app.firebase.max-file-size:52428800}") // 50MB
-    private long maxFileSize;
-
-
-    @Getter
-    @Value("${app.firebase.signed-url-duration-hours:24}")
-    private int signedUrlDurationHours;
+public class FirebaseStorageService implements IFirebaseStorageService {
 
     private static final List<String> ALLOWED_FILE_TYPES = Arrays.asList(
             "application/pdf",
@@ -54,6 +41,14 @@ public class FirebaseStorageService implements IFirebaseStorageService{
             "image/png",
             "image/gif"
     );
+    private final Storage storage;
+    @Value("${firebase.bucket-name}")
+    private String bucketName;
+    @Value("${app.firebase.max-file-size:52428800}") // 50MB
+    private long maxFileSize;
+    @Getter
+    @Value("${app.firebase.signed-url-duration-hours:24}")
+    private int signedUrlDurationHours;
 
     @Override
     public String uploadFile(MultipartFile file, String path) throws Exception {
@@ -206,8 +201,8 @@ public class FirebaseStorageService implements IFirebaseStorageService{
                     .name(blob.getName())
                     .size(blob.getSize())
                     .contentType(blob.getContentType())
-                    .createdTime(blob.getCreateTime())
-                    .updatedTime(blob.getUpdateTime())
+                    .createdTime(blob.getCreateTimeOffsetDateTime() != null ? blob.getCreateTimeOffsetDateTime().toInstant().toEpochMilli() : null)
+                    .updatedTime(blob.getUpdateTimeOffsetDateTime() != null ? blob.getUpdateTimeOffsetDateTime().toInstant().toEpochMilli() : null)
                     .md5Hash(blob.getMd5())
                     .metadata(blob.getMetadata())
                     .signedUrl(generateSignedUrl(path))

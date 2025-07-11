@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
 @Entity
 @Builder
 @Table(name = "users")
-@EqualsAndHashCode(exclude = { "roles" })
-@ToString(exclude = { "roles" })
+@EqualsAndHashCode(exclude = {"roles"})
+@ToString(exclude = {"roles"})
 @NamedEntityGraphs({
         @NamedEntityGraph(name = "User.withRoles", attributeNodes = @NamedAttributeNode("roles")),
         @NamedEntityGraph(name = "User.withRolesDetailed", attributeNodes = @NamedAttributeNode(value = "roles", subgraph = "roles"), subgraphs = @NamedSubgraph(name = "roles", attributeNodes = @NamedAttributeNode("name")))

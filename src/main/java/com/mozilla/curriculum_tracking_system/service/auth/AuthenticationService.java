@@ -246,7 +246,6 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
 
-
     private void validateUserAccount(User user) {
         if (!user.isEnabled()) {
             throw new BadRequestException("Account is disabled");

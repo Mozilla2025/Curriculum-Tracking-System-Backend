@@ -1,11 +1,10 @@
 package com.mozilla.curriculum_tracking_system.repository.roles;
 
-import java.util.Optional;
-
+import com.mozilla.curriculum_tracking_system.model.roles.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.mozilla.curriculum_tracking_system.model.roles.Role;
+import java.util.Optional;
 
 
 @Repository

@@ -115,7 +115,7 @@ public class CurriculumTrackingSpecification {
     /**
      * Creates a specification for finding overdue trackings
      *
-     *  @return A specification for overdue trackings
+     * @return A specification for overdue trackings
      */
 
     public static Specification<CurriculumTracking> isOverdue() {

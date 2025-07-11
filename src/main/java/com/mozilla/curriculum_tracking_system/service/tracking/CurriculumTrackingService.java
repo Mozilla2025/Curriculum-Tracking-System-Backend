@@ -132,9 +132,12 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
             assigneeEmail = assigneeUser.getEmail();
         }
 
+        updateTrackingForAction(tracking, request, toStage, assigneeUser != null ? assigneeUser.getId() : null);
+        CurriculumTracking updatedTracking = curriculumTrackingRepository.saveAndFlush(tracking);
+
         // Create history entry
         CurriculumTrackingHistory historyEntry = CurriculumTrackingHistory.builder()
-                .curriculumTracking(tracking)
+                .curriculumTracking(updatedTracking)
                 .stage(fromStage)
                 .actionType(request.getActionType())
                 .performedBy(userId)
@@ -148,9 +151,10 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
                 .isMilestone(request.isMilestone())
                 .build();
 
-        updateTrackingForAction(tracking, request, toStage, assigneeUser != null ? assigneeUser.getId() : null);
 
         CurriculumTrackingHistoryDto savedHistoryDto = historyService.addHistoryEntry(historyEntry);
+
+        historyService.flushHistoryChanges();
 
         if (request.getDocuments() != null && !request.getDocuments().isEmpty()) {
             try {
@@ -165,7 +169,6 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
             }
         }
 
-        CurriculumTracking updatedTracking = curriculumTrackingRepository.save(tracking);
 
         log.info("Successfully performed action {} on tracking {}", request.getActionType(), tracking.getId());
 

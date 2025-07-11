@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Welcome</title>
     <style>
         body {
@@ -38,20 +38,20 @@
     </style>
 </head>
 <body>
-    <div class="email-container">
-        <div class="header">
-            <h2>🎉 Welcome to Curriculum Tracking System!</h2>
-        </div>
-        
-        <p>Hello <span th:text="${username}">User</span>,</p>
-        
-        <p>Welcome to our platform! We're excited to have you on board.</p>
-        
-        <div style="text-align: center;">
-            <a th:href="${loginUrl}" class="welcome-button">Get Started</a>
-        </div>
-        
-        <p>If you need help, contact us at <a th:href="'mailto:' + ${supportEmail}" th:text="${supportEmail}"></a></p>
+<div class="email-container">
+    <div class="header">
+        <h2>🎉 Welcome to Curriculum Tracking System!</h2>
     </div>
+
+    <p>Hello <span th:text="${username}">User</span>,</p>
+
+    <p>Welcome to our platform! We're excited to have you on board.</p>
+
+    <div style="text-align: center;">
+        <a class="welcome-button" th:href="${loginUrl}">Get Started</a>
+    </div>
+
+    <p>If you need help, contact us at <a th:href="'mailto:' + ${supportEmail}" th:text="${supportEmail}"></a></p>
+</div>
 </body>
 </html>
