@@ -13,9 +13,7 @@ import java.util.List;
  */
 public interface ICurriculumTrackingDocumentService {
 
-    /**
-     * Upload document to tracking history
-     */
+
     DocumentUploadResponse uploadDocument(DocumentUploadRequest request, String authToken);
 
     /**
@@ -41,14 +39,16 @@ public interface ICurriculumTrackingDocumentService {
      */
     List<CurriculumTrackingDocumentDto> getDocumentsByCurriculumTrackingId(Long curriculumTrackingId);
 
-    /**
-     * Download document (returns Firebase URL for frontend)
-     */
+
     String getDocumentDownloadUrl(Long documentId, String authToken);
 
-    /**
-     * Delete document (soft delete)
-     */
+
+    String refreshDocumentUrl(Long documentId, String authToken);
+
+
+    List<String> refreshMultipleDocumentUrls(List<Long> documentIds, String authToken);
+
+
     void deleteDocument(Long documentId, String authToken);
 
     /**

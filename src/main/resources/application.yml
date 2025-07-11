@@ -96,6 +96,11 @@ app:
     ttl:
       departments: 1800
       schools: 3600
+
+  firebase:
+    max-file-size: 52428800
+    signed-url-duration-hours: 8760
+
 api:
   prefix: api/v1
 logging:
