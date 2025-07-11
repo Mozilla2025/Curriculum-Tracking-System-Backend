@@ -103,7 +103,7 @@ public class CurriculumTracking {
                     String.format("Cannot send curriculum back from %s to %s",
                             this.currentStage, targetStage)
             );
-    }
+        }
     }
 
     /**

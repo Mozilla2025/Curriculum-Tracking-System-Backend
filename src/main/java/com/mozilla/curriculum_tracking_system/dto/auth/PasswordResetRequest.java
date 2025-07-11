@@ -1,7 +1,6 @@
 package com.mozilla.curriculum_tracking_system.dto.auth;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

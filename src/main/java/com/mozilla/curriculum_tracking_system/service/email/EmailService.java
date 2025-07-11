@@ -1,8 +1,11 @@
 package com.mozilla.curriculum_tracking_system.service.email;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import com.mozilla.curriculum_tracking_system.dto.email.EmailRequest;
+import com.mozilla.curriculum_tracking_system.dto.email.UserCredentialsEmailData;
+import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -10,13 +13,8 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import com.mozilla.curriculum_tracking_system.dto.email.EmailRequest;
-import com.mozilla.curriculum_tracking_system.dto.email.UserCredentialsEmailData;
-import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
-
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor

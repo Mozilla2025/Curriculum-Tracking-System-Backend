@@ -1,16 +1,15 @@
 package com.mozilla.curriculum_tracking_system.repository.user;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-
+import com.mozilla.curriculum_tracking_system.model.user.PasswordResetToken;
+import com.mozilla.curriculum_tracking_system.model.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.mozilla.curriculum_tracking_system.model.user.PasswordResetToken;
-import com.mozilla.curriculum_tracking_system.model.user.User;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Repository
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long> {

@@ -20,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class CurriculumTrackingHistoryService implements ICurriculumTrackingHistoryService{
+public class CurriculumTrackingHistoryService implements ICurriculumTrackingHistoryService {
 
     private final CurriculumTrackingHistoryRepository historyRepository;
     private final CurriculumTrackingMapper trackingMapper;
@@ -152,7 +152,6 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
     }
 
 
-
     @Override
     public List<CurriculumTrackingHistoryDto> getOverdueHistoryItems() {
         log.debug("Fetching overdue history items");
@@ -161,6 +160,12 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
                 .findOverdueItems(LocalDateTime.now());
 
         return trackingMapper.toHistoryDtoList(overdueItems);
+    }
+
+    @Override
+    @Transactional
+    public void flushHistoryChanges() {
+        historyRepository.flush();
     }
 
 

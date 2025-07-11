@@ -1,19 +1,13 @@
 package com.mozilla.curriculum_tracking_system.controller.auth;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.mozilla.curriculum_tracking_system.dto.auth.PasswordResetRequest;
 import com.mozilla.curriculum_tracking_system.dto.auth.ResetPasswordRequest;
 import com.mozilla.curriculum_tracking_system.response.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.auth.IPasswordResetService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("${api.prefix}/users/auth/password")

@@ -582,7 +582,8 @@ public class DataInitializationService implements CommandLineRunner {
     private record SchoolData(String name, String code, String email) {
     }
 
-    private record CurriculumTemplate(String name, int durationSemesters, int durationYears, CurriculumTrackingStatus status,
+    private record CurriculumTemplate(String name, int durationSemesters, int durationYears,
+                                      CurriculumTrackingStatus status,
                                       String suffix) {
     }
 }

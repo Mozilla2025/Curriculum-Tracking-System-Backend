@@ -362,4 +362,5 @@ public class CurriculumTrackingMapper {
                     List.of(CurriculumTrackingStage.DEAN_COMMITTEE, CurriculumTrackingStage.QA_INTERNAL_REVIEW);
             default -> List.of();
         };
-    }}
+    }
+}

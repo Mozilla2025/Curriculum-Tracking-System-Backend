@@ -15,7 +15,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class SchoolService implements ISchoolService{
+public class SchoolService implements ISchoolService {
 
     private final SchoolRepository schoolRepository;
     private final SchoolMapper schoolMapper;
@@ -33,7 +33,7 @@ public class SchoolService implements ISchoolService{
     public SchoolDto getSchoolById(Long id) {
         log.debug("fetching school with ID: {}", id);
 
-        if (id == null){
+        if (id == null) {
             throw new IllegalArgumentException("School ID cannot be null");
         }
 

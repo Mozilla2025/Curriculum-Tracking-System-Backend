@@ -1,15 +1,5 @@
 package com.mozilla.curriculum_tracking_system.service.auth;
 
-import java.security.SecureRandom;
-import java.time.LocalDateTime;
-import java.util.Base64;
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.mozilla.curriculum_tracking_system.dto.auth.PasswordResetRequest;
 import com.mozilla.curriculum_tracking_system.dto.auth.ResetPasswordRequest;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
@@ -18,22 +8,28 @@ import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.user.PasswordResetTokenRepository;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import com.mozilla.curriculum_tracking_system.service.email.IEmailService;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class PasswordResetService implements IPasswordResetService {
 
+    private static final SecureRandom secureRandom = new SecureRandom();
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final IEmailService emailService;
-
     @Value("${app.password-reset.token-expiry-hours:24}")
     private int tokenExpiryHours;
-
-    private static final SecureRandom secureRandom = new SecureRandom();
 
     @Override
     @Transactional

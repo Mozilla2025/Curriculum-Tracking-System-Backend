@@ -45,8 +45,8 @@ public class JwtUtil {
             claims.put("lastName", user.getLastName());
 
             List<String> roleNames = user.getRoles().stream()
-            .map(Role::getName)
-            .collect(Collectors.toList());
+                    .map(Role::getName)
+                    .collect(Collectors.toList());
             claims.put("roles", roleNames);
 
             claims.put("isAssistantRole", roleNames.contains("ASSISTANT"));
@@ -99,7 +99,7 @@ public class JwtUtil {
         return getClaimsFromToken(token, claims -> (String) claims.get("email"));
     }
 
-    
+
     @SuppressWarnings("unchecked")
     public List<String> getRolesFromToken(String token) {
         return getClaimsFromToken(token, claims -> (List<String>) claims.get("roles"));
@@ -118,15 +118,15 @@ public class JwtUtil {
     }
 
     public Boolean isSeniorAdinFromToken(String token) {
-        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isSeniorAdmin") );
+        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isSeniorAdmin"));
     }
 
     public Boolean isAssistantRoleFromToken(String token) {
-        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isAssistantRole") );
+        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isAssistantRole"));
     }
 
     public Boolean isSchoolBoardFromToken(String token) {
-        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isSchoolBoard") );
+        return getClaimsFromToken(token, claims -> (Boolean) claims.get("isSchoolBoard"));
     }
 
     public Boolean isSenateFromToken(String token) {
@@ -207,7 +207,7 @@ public class JwtUtil {
         try {
             List<String> userRoles = getRolesFromToken(token);
             if (userRoles == null) return false;
-            
+
             for (String roleName : roleNames) {
                 if (userRoles.contains(roleName)) {
                     return true;

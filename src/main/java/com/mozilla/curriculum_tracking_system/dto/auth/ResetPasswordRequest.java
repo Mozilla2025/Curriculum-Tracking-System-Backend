@@ -1,7 +1,6 @@
 package com.mozilla.curriculum_tracking_system.dto.auth;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -14,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ResetPasswordRequest {
-     @NotBlank(message = "Reset token is required")
+    @NotBlank(message = "Reset token is required")
     @JsonProperty("token")
     private String token;
 
