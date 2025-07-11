@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.service.tracking;
+package com.mozilla.curriculum_tracking_system.service.firebase;
 
 import org.springframework.web.multipart.MultipartFile;
 
