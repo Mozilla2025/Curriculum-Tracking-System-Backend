@@ -1,7 +1,7 @@
 package com.mozilla.curriculum_tracking_system.config;
 
 import com.mozilla.curriculum_tracking_system.constants.RoleConstants;
-import com.mozilla.curriculum_tracking_system.enums.CurriculumStatus;
+import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStatus;
 import com.mozilla.curriculum_tracking_system.model.academic.AcademicLevel;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import com.mozilla.curriculum_tracking_system.model.department.Department;
@@ -52,11 +52,11 @@ public class DataInitializationService implements CommandLineRunner {
     public void run(String... args) {
         log.info("Starting system data initialization...");
 
-        initializeRoles();
-        initializeDefaultAdmin();
-        initializeAcademicLevels();
-        initializeSchoolsAndDepartments();
-        initializeCurriculums();
+//        initializeRoles();
+//        initializeDefaultAdmin();
+//        initializeAcademicLevels();
+//        initializeSchoolsAndDepartments();
+//        initializeCurriculums();
 
         log.info("System data initialization completed successfully!");
     }
@@ -365,7 +365,7 @@ public class DataInitializationService implements CommandLineRunner {
                     .academicLevel(academicLevel)
                     .build();
 
-            if (template.status == CurriculumStatus.APPROVED) {
+            if (template.status == CurriculumTrackingStatus.APPROVED_BY_CUE) {
                 curriculum.setApprovedAt(effectiveDate.plusDays(7));
             }
 
@@ -406,12 +406,12 @@ public class DataInitializationService implements CommandLineRunner {
         List<CurriculumTemplate> templates = new ArrayList<>();
 
         List<String> degreeVariations = getDegreeVariations(departmentName, baseName);
-        CurriculumStatus[] statuses = {CurriculumStatus.APPROVED, CurriculumStatus.UNDER_REVIEW,
-                CurriculumStatus.PENDING, CurriculumStatus.APPROVED};
+        CurriculumTrackingStatus[] statuses = {CurriculumTrackingStatus.APPROVED_BY_CUE, CurriculumTrackingStatus.UNDER_REVIEW,
+                CurriculumTrackingStatus.ACCREDITED, CurriculumTrackingStatus.MAJOR_REVAMP, CurriculumTrackingStatus.MINOR_REVAMP};
 
         int statusIndex = 0;
         for (String variation : degreeVariations) {
-            CurriculumStatus status = statuses[statusIndex % statuses.length];
+            CurriculumTrackingStatus status = statuses[statusIndex % statuses.length];
 
             templates.add(new CurriculumTemplate(
                     variation,
@@ -426,7 +426,7 @@ public class DataInitializationService implements CommandLineRunner {
                         variation + " (Revised)",
                         baseDuration,
                         baseYears,
-                        CurriculumStatus.UNDER_REVIEW,
+                        CurriculumTrackingStatus.UNDER_REVIEW,
                         "V2"
                 ));
             }
@@ -582,7 +582,7 @@ public class DataInitializationService implements CommandLineRunner {
     private record SchoolData(String name, String code, String email) {
     }
 
-    private record CurriculumTemplate(String name, int durationSemesters, int durationYears, CurriculumStatus status,
+    private record CurriculumTemplate(String name, int durationSemesters, int durationYears, CurriculumTrackingStatus status,
                                       String suffix) {
     }
 }

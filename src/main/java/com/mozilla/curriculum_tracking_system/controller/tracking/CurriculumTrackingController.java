@@ -30,7 +30,7 @@ public class CurriculumTrackingController {
      */
     @PostMapping("/initiate")
     public ResponseEntity<ApiResponse> initiateCurriculumTracking(
-            @Valid @RequestBody InitiateCurriculumTrackingRequest request,
+            @Valid @ModelAttribute InitiateCurriculumTrackingRequest request,
             @RequestHeader("Authorization") String authorizationHeader) {
 
         log.debug("POST /tracking/curriculums/initiate - request: {}", request);
@@ -51,7 +51,7 @@ public class CurriculumTrackingController {
      */
     @PostMapping("/action")
     public ResponseEntity<ApiResponse> performTrackingAction(
-            @Valid @RequestBody CurriculumTrackingActionRequest request,
+            @Valid @ModelAttribute CurriculumTrackingActionRequest request,
             @RequestHeader("Authorization") String authorizationHeader) {
 
         log.debug("POST /tracking/curriculums/action - request: {}", request);

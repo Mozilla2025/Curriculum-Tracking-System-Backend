@@ -11,8 +11,9 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CurriculumStatusStats {
     private long totalCurriculums;
-    private long pendingCurriculums;
-    private long approvedCurriculums;
-    private long rejectedCurriculums;
     private long underReviewCurriculums;
+    private long approvedCurriculums;
+    private long accreditedCurriculums;
+    private long minorRevampCurriculums;
+    private long majorRevampCurriculums;
 }
