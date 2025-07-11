@@ -17,7 +17,7 @@ import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("${api.prefix}/schools")
+@RequestMapping("${api.prefix}/users/schools")
 @Slf4j
 public class SchoolController {
 
