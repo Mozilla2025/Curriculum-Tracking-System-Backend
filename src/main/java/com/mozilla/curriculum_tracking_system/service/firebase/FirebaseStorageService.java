@@ -7,6 +7,7 @@ import com.google.cloud.storage.Storage;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -33,6 +35,11 @@ public class FirebaseStorageService implements IFirebaseStorageService{
 
     @Value("${app.firebase.max-file-size:52428800}") // 50MB
     private long maxFileSize;
+
+
+    @Getter
+    @Value("${app.firebase.signed-url-duration-hours:24}")
+    private int signedUrlDurationHours;
 
     private static final List<String> ALLOWED_FILE_TYPES = Arrays.asList(
             "application/pdf",
@@ -64,7 +71,8 @@ public class FirebaseStorageService implements IFirebaseStorageService{
             Blob blob = storage.create(blobInfo, file.getBytes());
 
             log.info("Successfully uploaded file to Firebase Storage: {}", path);
-            return getPublicUrl(path);
+
+            return generateSignedUrl(path);
 
         } catch (Exception e) {
             log.error("Failed to upload file to Firebase Storage: {}", e.getMessage(), e);
@@ -97,6 +105,18 @@ public class FirebaseStorageService implements IFirebaseStorageService{
         log.debug("Getting download URL for file: {}", path);
 
         try {
+            return generateSignedUrl(path);
+        } catch (Exception e) {
+            log.error("Failed to get download URL for file: {}", e.getMessage(), e);
+            throw new BadRequestException("Failed to get download URL: " + e.getMessage());
+        }
+    }
+
+
+    public String generateSignedUrl(String path) throws Exception {
+        log.debug("Generating signed URL for file: {}", path);
+
+        try {
             BlobId blobId = BlobId.of(bucketName, path);
             Blob blob = storage.get(blobId);
 
@@ -104,12 +124,55 @@ public class FirebaseStorageService implements IFirebaseStorageService{
                 throw new BadRequestException("File not found: " + path);
             }
 
-            return blob.signUrl(1, TimeUnit.HOURS).toString();
+            return blob.signUrl(signedUrlDurationHours, TimeUnit.HOURS).toString();
 
         } catch (Exception e) {
-            log.error("Failed to get download URL for file: {}", e.getMessage(), e);
-            throw new BadRequestException("Failed to get download URL: " + e.getMessage());
+            log.error("Failed to generate signed URL for file: {}", e.getMessage(), e);
+            throw new BadRequestException("Failed to generate signed URL: " + e.getMessage());
         }
+    }
+
+
+    public String generateSignedUrl(String path, int durationHours) throws Exception {
+        log.debug("Generating signed URL for file: {} with duration: {} hours", path, durationHours);
+
+        try {
+            BlobId blobId = BlobId.of(bucketName, path);
+            Blob blob = storage.get(blobId);
+
+            if (blob == null || !blob.exists()) {
+                throw new BadRequestException("File not found: " + path);
+            }
+
+            return blob.signUrl(durationHours, TimeUnit.HOURS).toString();
+
+        } catch (Exception e) {
+            log.error("Failed to generate signed URL for file: {}", e.getMessage(), e);
+            throw new BadRequestException("Failed to generate signed URL: " + e.getMessage());
+        }
+    }
+
+
+    public String refreshSignedUrl(String path) throws Exception {
+        log.debug("Refreshing signed URL for file: {}", path);
+        return generateSignedUrl(path);
+    }
+
+
+    public List<String> generateSignedUrls(List<String> paths) throws Exception {
+        log.debug("Generating signed URLs for {} files", paths.size());
+
+        return paths.stream()
+                .map(path -> {
+                    try {
+                        return generateSignedUrl(path);
+                    } catch (Exception e) {
+                        log.warn("Failed to generate signed URL for path: {}", path, e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     @Override
@@ -147,6 +210,7 @@ public class FirebaseStorageService implements IFirebaseStorageService{
                     .updatedTime(blob.getUpdateTime())
                     .md5Hash(blob.getMd5())
                     .metadata(blob.getMetadata())
+                    .signedUrl(generateSignedUrl(path))
                     .build();
 
         } catch (Exception e) {
@@ -204,15 +268,18 @@ public class FirebaseStorageService implements IFirebaseStorageService{
         return maxFileSize;
     }
 
-    private String getPublicUrl(String path) {
-        return String.format("https://storage.googleapis.com/%s/%s", bucketName, path);
+
+    public String updateDocumentUrl(String firebasePath) throws Exception {
+        return generateSignedUrl(firebasePath);
     }
+
 
     private java.util.Map<String, String> buildMetadata(MultipartFile file) {
         java.util.Map<String, String> metadata = new java.util.HashMap<>();
         metadata.put("originalName", file.getOriginalFilename());
         metadata.put("uploadedAt", LocalDateTime.now().toString());
         metadata.put("size", String.valueOf(file.getSize()));
+        metadata.put("signedUrlGenerated", LocalDateTime.now().toString());
         return metadata;
     }
 
@@ -221,7 +288,6 @@ public class FirebaseStorageService implements IFirebaseStorageService{
             return "unknown";
         }
 
-        // Remove or replace unsafe characters
         return filename.replaceAll("[^a-zA-Z0-9._-]", "_")
                 .replaceAll("_{2,}", "_")
                 .toLowerCase();
@@ -273,5 +339,6 @@ public class FirebaseStorageService implements IFirebaseStorageService{
         private Long updatedTime;
         private String md5Hash;
         private java.util.Map<String, String> metadata;
+        private String signedUrl;
     }
 }

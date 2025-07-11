@@ -11,8 +11,10 @@ import com.mozilla.curriculum_tracking_system.mapper.CurriculumTrackingMapper;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTrackingHistory;
+import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.curriculum.CurriculumRepository;
 import com.mozilla.curriculum_tracking_system.repository.tracking.CurriculumTrackingRepository;
+import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
 import com.mozilla.curriculum_tracking_system.util.CurriculumTrackingSpecification;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
 
     private final CurriculumTrackingRepository curriculumTrackingRepository;
     private final CurriculumRepository curriculumRepository;
+    private final UserRepository userRepository;
     private final CurriculumTrackingMapper trackingMapper;
     private final IAuthenticationService authenticationService;
     private final ICurriculumTrackingHistoryService historyService;
@@ -55,7 +58,7 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         }
 
         Long userId = authenticationService.getUserIdFromToken(authToken);
-        String userEmail = authenticationService.getEmailFromToken(authToken);
+        User initiatorUser = findUserById(userId);
 
         CurriculumTracking tracking = CurriculumTracking.builder()
                 .curriculum(curriculum)
@@ -74,29 +77,31 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
                 .stage(CurriculumTrackingStage.SCHOOL_BOARD)
                 .actionType(TrackingActionType.SUBMITTED)
                 .performedBy(userId)
-                .performedByEmail(userEmail)
+                .performedByEmail(initiatorUser.getEmail())
                 .toStage(CurriculumTrackingStage.SCHOOL_BOARD)
                 .comments(request.getInitialComments())
                 .isMilestone(true)
                 .build();
 
-        historyService.addHistoryEntry(initialHistory);
+        CurriculumTrackingHistoryDto savedHistoryDto = historyService.addHistoryEntry(initialHistory);
 
         if (request.getInitialDocuments() != null && !request.getInitialDocuments().isEmpty()) {
             try {
-                documentService.uploadMultipleDocuments(
-                        initialHistory.getId(),
+                List<DocumentUploadResponse> uploadResponses = documentService.uploadMultipleDocuments(
+                        savedHistoryDto.getId(),
                         request.getInitialDocuments(),
                         "Initial submission documents",
                         authToken
                 );
+                log.info("Uploaded {} initial documents for tracking {}", uploadResponses.size(), savedTracking.getId());
             } catch (Exception e) {
                 log.warn("Failed to upload initial documents for tracking {}: {}", savedTracking.getId(), e.getMessage());
             }
         }
 
         log.info("Successfully initiated curriculum tracking with ID: {}", savedTracking.getId());
-        return trackingMapper.toDto(savedTracking);
+
+        return trackingMapper.toDtoWithUserEmails(savedTracking, initiatorUser.getEmail(), null);
     }
 
     @Override
@@ -107,13 +112,25 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
 
         CurriculumTracking tracking = findTrackingById(request.getTrackingId());
         Long userId = authenticationService.getUserIdFromToken(authToken);
-        String userEmail = authenticationService.getEmailFromToken(authToken);
+        User performerUser = findUserById(userId);
 
-        // Validate user can perform action at current stage
         validateUserCanPerformAction(tracking, request.getActionType(), authToken);
 
         CurriculumTrackingStage fromStage = tracking.getCurrentStage();
         CurriculumTrackingStage toStage = determineTargetStage(tracking, request);
+
+        User assigneeUser = null;
+        String assigneeEmail = null;
+
+        if (request.getAssignToUserId() != null) {
+            assigneeUser = findUserById(request.getAssignToUserId());
+            assigneeEmail = assigneeUser.getEmail();
+        } else if (StringUtils.hasText(request.getAssignToEmail())) {
+
+            assigneeUser = userRepository.findByEmail(request.getAssignToEmail())
+                    .orElseThrow(() -> new BadRequestException("No user found with email: " + request.getAssignToEmail()));
+            assigneeEmail = assigneeUser.getEmail();
+        }
 
         // Create history entry
         CurriculumTrackingHistory historyEntry = CurriculumTrackingHistory.builder()
@@ -121,9 +138,9 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
                 .stage(fromStage)
                 .actionType(request.getActionType())
                 .performedBy(userId)
-                .performedByEmail(userEmail)
-                .assignedTo(request.getAssignToUserId())
-                .assignedToEmail(request.getAssignToEmail())
+                .performedByEmail(performerUser.getEmail())
+                .assignedTo(assigneeUser != null ? assigneeUser.getId() : null)
+                .assignedToEmail(assigneeEmail)
                 .fromStage(fromStage)
                 .toStage(toStage)
                 .comments(request.getComments())
@@ -131,19 +148,14 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
                 .isMilestone(request.isMilestone())
                 .build();
 
-        // Update tracking based on action
-        updateTrackingForAction(tracking, request, toStage, userId);
+        updateTrackingForAction(tracking, request, toStage, assigneeUser != null ? assigneeUser.getId() : null);
 
-        // Save history entry
         CurriculumTrackingHistoryDto savedHistoryDto = historyService.addHistoryEntry(historyEntry);
 
-        Long savedHistoryId = savedHistoryDto.getId();
-
-        // Upload documents if provided
         if (request.getDocuments() != null && !request.getDocuments().isEmpty()) {
             try {
                 documentService.uploadMultipleDocuments(
-                        savedHistoryId,
+                        savedHistoryDto.getId(),
                         request.getDocuments(),
                         request.getComments(),
                         authToken
@@ -156,7 +168,16 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         CurriculumTracking updatedTracking = curriculumTrackingRepository.save(tracking);
 
         log.info("Successfully performed action {} on tracking {}", request.getActionType(), tracking.getId());
-        return trackingMapper.toDto(updatedTracking);
+
+        User initiatorUser = findUserById(updatedTracking.getInitiatedBy());
+        User currentAssigneeUser = updatedTracking.getCurrentAssignee() != null ?
+                findUserById(updatedTracking.getCurrentAssignee()) : null;
+
+        return trackingMapper.toDtoWithUserEmails(
+                updatedTracking,
+                initiatorUser.getEmail(),
+                currentAssigneeUser != null ? currentAssigneeUser.getEmail() : null
+        );
     }
 
     @Override
@@ -167,7 +188,15 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         CurriculumTracking tracking = curriculumTrackingRepository.findByIdWithCurriculumDetails(trackingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Curriculum tracking not found with ID: " + trackingId));
 
-        return trackingMapper.toDto(tracking);
+        User initiatorUser = findUserById(tracking.getInitiatedBy());
+        User currentAssigneeUser = tracking.getCurrentAssignee() != null ?
+                findUserById(tracking.getCurrentAssignee()) : null;
+
+        return trackingMapper.toDtoWithUserEmails(
+                tracking,
+                initiatorUser.getEmail(),
+                currentAssigneeUser != null ? currentAssigneeUser.getEmail() : null
+        );
     }
 
     @Override
@@ -178,7 +207,15 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         CurriculumTracking tracking = curriculumTrackingRepository.findByCurriculumId(curriculumId)
                 .orElseThrow(() -> new ResourceNotFoundException("Curriculum tracking not found for curriculum ID: " + curriculumId));
 
-        return trackingMapper.toDto(tracking);
+        User initiatorUser = findUserById(tracking.getInitiatedBy());
+        User currentAssigneeUser = tracking.getCurrentAssignee() != null ?
+                findUserById(tracking.getCurrentAssignee()) : null;
+
+        return trackingMapper.toDtoWithUserEmails(
+                tracking,
+                initiatorUser.getEmail(),
+                currentAssigneeUser != null ? currentAssigneeUser.getEmail() : null
+        );
     }
 
     @Override
@@ -187,7 +224,7 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         log.debug("Fetching all curriculum trackings with pagination: {}", pageable);
 
         Page<CurriculumTracking> trackingPage = curriculumTrackingRepository.findAll(pageable);
-        return trackingMapper.buildPageResponse(trackingPage);
+        return trackingMapper.buildPageResponseWithUserEmails(trackingPage, userRepository);
     }
 
     @Override
@@ -198,7 +235,7 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         Specification<CurriculumTracking> spec = CurriculumTrackingSpecification.withCriteria(searchRequest);
         Page<CurriculumTracking> trackingPage = curriculumTrackingRepository.findAll(spec, pageable);
 
-        return trackingMapper.buildPageResponse(trackingPage);
+        return trackingMapper.buildPageResponseWithUserEmails(trackingPage, userRepository);
     }
 
     @Override
@@ -208,7 +245,7 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         log.debug("Fetching assigned trackings for user ID: {}", userId);
 
         Page<CurriculumTracking> trackingPage = curriculumTrackingRepository.findByCurrentAssignee(userId, pageable);
-        return trackingMapper.buildPageResponse(trackingPage);
+        return trackingMapper.buildPageResponseWithUserEmails(trackingPage, userRepository);
     }
 
     @Override
@@ -217,7 +254,7 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         log.debug("Fetching curriculum trackings by stage: {}", stage);
 
         Page<CurriculumTracking> trackingPage = curriculumTrackingRepository.findByCurrentStage(stage, pageable);
-        return trackingMapper.buildPageResponse(trackingPage);
+        return trackingMapper.buildPageResponseWithUserEmails(trackingPage, userRepository);
     }
 
     @Override
@@ -226,7 +263,7 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         log.debug("Fetching curriculum trackings by status: {}", status);
 
         Page<CurriculumTracking> trackingPage = curriculumTrackingRepository.findByStatus(status, pageable);
-        return trackingMapper.buildPageResponse(trackingPage);
+        return trackingMapper.buildPageResponseWithUserEmails(trackingPage, userRepository);
     }
 
     @Override
@@ -235,7 +272,18 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         log.debug("Fetching overdue curriculum trackings");
 
         List<CurriculumTracking> overdueTrackings = curriculumTrackingRepository.findOverdueTrackings(LocalDateTime.now());
-        return trackingMapper.toDtoList(overdueTrackings);
+        return overdueTrackings.stream()
+                .map(tracking -> {
+                    User initiatorUser = findUserById(tracking.getInitiatedBy());
+                    User currentAssigneeUser = tracking.getCurrentAssignee() != null ?
+                            findUserById(tracking.getCurrentAssignee()) : null;
+                    return trackingMapper.toDtoWithUserEmails(
+                            tracking,
+                            initiatorUser.getEmail(),
+                            currentAssigneeUser != null ? currentAssigneeUser.getEmail() : null
+                    );
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -247,7 +295,18 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         LocalDateTime targetDate = currentDate.plusDays(days);
 
         List<CurriculumTracking> expiringSoon = curriculumTrackingRepository.findExpiringSoon(currentDate, targetDate);
-        return trackingMapper.toDtoList(expiringSoon);
+        return expiringSoon.stream()
+                .map(tracking -> {
+                    User initiatorUser = findUserById(tracking.getInitiatedBy());
+                    User currentAssigneeUser = tracking.getCurrentAssignee() != null ?
+                            findUserById(tracking.getCurrentAssignee()) : null;
+                    return trackingMapper.toDtoWithUserEmails(
+                            tracking,
+                            initiatorUser.getEmail(),
+                            currentAssigneeUser != null ? currentAssigneeUser.getEmail() : null
+                    );
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -313,12 +372,19 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         validateQAAccess(authToken);
 
         CurriculumTracking tracking = findTrackingById(trackingId);
-        tracking.setCurrentAssignee(userId);
+        User assigneeUser = findUserById(userId);
 
+        tracking.setCurrentAssignee(userId);
         CurriculumTracking updatedTracking = curriculumTrackingRepository.save(tracking);
 
+        User initiatorUser = findUserById(updatedTracking.getInitiatedBy());
+
         log.info("Successfully assigned tracking {} to user {}", trackingId, userId);
-        return trackingMapper.toDto(updatedTracking);
+        return trackingMapper.toDtoWithUserEmails(
+                updatedTracking,
+                initiatorUser.getEmail(),
+                assigneeUser.getEmail()
+        );
     }
 
     @Override
@@ -332,8 +398,16 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
 
         CurriculumTracking updatedTracking = curriculumTrackingRepository.save(tracking);
 
+        User initiatorUser = findUserById(updatedTracking.getInitiatedBy());
+        User currentAssigneeUser = updatedTracking.getCurrentAssignee() != null ?
+                findUserById(updatedTracking.getCurrentAssignee()) : null;
+
         log.info("Successfully updated tracking notes for tracking ID: {}", trackingId);
-        return trackingMapper.toDto(updatedTracking);
+        return trackingMapper.toDtoWithUserEmails(
+                updatedTracking,
+                initiatorUser.getEmail(),
+                currentAssigneeUser != null ? currentAssigneeUser.getEmail() : null
+        );
     }
 
     @Override
@@ -435,6 +509,11 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Curriculum tracking not found with ID: " + trackingId));
     }
 
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+    }
+
     private void validateUserCanPerformAction(CurriculumTracking tracking, TrackingActionType actionType, String authToken) {
         List<String> userRoles = authenticationService.getRolesFromToken(authToken);
         CurriculumTrackingStage currentStage = tracking.getCurrentStage();
@@ -457,13 +536,13 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
     }
 
     private void updateTrackingForAction(CurriculumTracking tracking, CurriculumTrackingActionRequest request,
-                                         CurriculumTrackingStage toStage, Long userId) {
+                                         CurriculumTrackingStage toStage, Long assigneeUserId) {
         switch (request.getActionType()) {
             case SUBMITTED:
             case APPROVED:
                 tracking.setCurrentStage(toStage);
-                if (request.getAssignToUserId() != null) {
-                    tracking.setCurrentAssignee(request.getAssignToUserId());
+                if (assigneeUserId != null) {
+                    tracking.setCurrentAssignee(assigneeUserId);
                 }
                 break;
             case SENT_BACK:

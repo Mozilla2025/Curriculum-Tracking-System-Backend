@@ -5,6 +5,8 @@ import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTrackingDocument;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTrackingHistory;
+import com.mozilla.curriculum_tracking_system.model.user.User;
+import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +39,42 @@ public class CurriculumTrackingMapper {
                 .status(tracking.getStatus())
                 .initiatedBy(tracking.getInitiatedBy())
                 .currentAssignee(tracking.getCurrentAssignee())
+                .initiatedAt(tracking.getInitiatedAt())
+                .lastUpdatedAt(tracking.getLastUpdatedAt())
+                .completedAt(tracking.getCompletedAt())
+                .estimatedCompletionDate(tracking.getEstimatedCompletionDate())
+                .notes(tracking.getNotes())
+                .isActive(tracking.isActive())
+                .isCompleted(tracking.isCompleted())
+                .totalHistoryEntries(tracking.getTrackingHistory() != null ? tracking.getTrackingHistory().size() : 0)
+                .build();
+    }
+
+    /**
+     * Convert CurriculumTracking entity to DTO with user emails populated
+     */
+    public CurriculumTrackingDto toDtoWithUserEmails(CurriculumTracking tracking, String initiatedByEmail, String currentAssigneeEmail) {
+        if (tracking == null) {
+            return null;
+        }
+
+        return CurriculumTrackingDto.builder()
+                .id(tracking.getId())
+                .curriculumId(tracking.getCurriculum() != null ? tracking.getCurriculum().getId() : null)
+                .curriculumName(tracking.getCurriculum() != null ? tracking.getCurriculum().getName() : null)
+                .curriculumCode(tracking.getCurriculum() != null ? tracking.getCurriculum().getCode() : null)
+                .schoolName(tracking.getCurriculum() != null && tracking.getCurriculum().getSchool() != null
+                        ? tracking.getCurriculum().getSchool().getName() : null)
+                .departmentName(tracking.getCurriculum() != null && tracking.getCurriculum().getDepartment() != null
+                        ? tracking.getCurriculum().getDepartment().getName() : null)
+                .currentStage(tracking.getCurrentStage())
+                .currentStageDisplayName(tracking.getCurrentStage() != null
+                        ? tracking.getCurrentStage().getDisplayName() : null)
+                .status(tracking.getStatus())
+                .initiatedBy(tracking.getInitiatedBy())
+                .initiatedByEmail(initiatedByEmail)
+                .currentAssignee(tracking.getCurrentAssignee())
+                .currentAssigneeEmail(currentAssigneeEmail)
                 .initiatedAt(tracking.getInitiatedAt())
                 .lastUpdatedAt(tracking.getLastUpdatedAt())
                 .completedAt(tracking.getCompletedAt())
@@ -187,6 +225,36 @@ public class CurriculumTrackingMapper {
     }
 
     /**
+     * Build page response for curriculum trackings with user emails populated
+     */
+    public CurriculumTrackingPageResponse buildPageResponseWithUserEmails(Page<CurriculumTracking> trackingPage, UserRepository userRepository) {
+        List<CurriculumTrackingDto> trackingDtos = trackingPage.getContent().stream()
+                .map(tracking -> {
+                    // Get user emails for each tracking
+                    User initiatorUser = userRepository.findById(tracking.getInitiatedBy()).orElse(null);
+                    User currentAssigneeUser = tracking.getCurrentAssignee() != null ?
+                            userRepository.findById(tracking.getCurrentAssignee()).orElse(null) : null;
+
+                    return toDtoWithUserEmails(
+                            tracking,
+                            initiatorUser != null ? initiatorUser.getEmail() : null,
+                            currentAssigneeUser != null ? currentAssigneeUser.getEmail() : null
+                    );
+                })
+                .collect(Collectors.toList());
+
+        return CurriculumTrackingPageResponse.builder()
+                .trackings(trackingDtos)
+                .currentPage(trackingPage.getNumber())
+                .totalPages(trackingPage.getTotalPages())
+                .totalElements(trackingPage.getTotalElements())
+                .pageSize(trackingPage.getSize())
+                .hasNext(trackingPage.hasNext())
+                .hasPrevious(trackingPage.hasPrevious())
+                .build();
+    }
+
+    /**
      * Convert stage enum to stage info DTO
      */
     public CurriculumTrackingStageInfo toStageInfoDto(CurriculumTrackingStage stage) {
@@ -294,5 +362,4 @@ public class CurriculumTrackingMapper {
                     List.of(CurriculumTrackingStage.DEAN_COMMITTEE, CurriculumTrackingStage.QA_INTERNAL_REVIEW);
             default -> List.of();
         };
-    }
-}
+    }}

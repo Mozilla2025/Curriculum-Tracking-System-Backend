@@ -9,8 +9,10 @@ import com.mozilla.curriculum_tracking_system.exception.UnauthorizedException;
 import com.mozilla.curriculum_tracking_system.mapper.CurriculumTrackingMapper;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTrackingDocument;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTrackingHistory;
+import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.tracking.CurriculumTrackingDocumentRepository;
 import com.mozilla.curriculum_tracking_system.repository.tracking.CurriculumTrackingHistoryRepository;
+import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
 import com.mozilla.curriculum_tracking_system.service.firebase.IFirebaseStorageService;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
 
     private final CurriculumTrackingDocumentRepository documentRepository;
     private final CurriculumTrackingHistoryRepository historyRepository;
+    private final UserRepository userRepository;
     private final CurriculumTrackingMapper trackingMapper;
     private final IFirebaseStorageService firebaseStorageService;
     private final IAuthenticationService authenticationService;
@@ -48,19 +51,16 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
 
         CurriculumTrackingHistory trackingHistory = findTrackingHistoryById(request.getTrackingHistoryId());
         Long userId = authenticationService.getUserIdFromToken(authToken);
-        String userEmail = authenticationService.getEmailFromToken(authToken);
+        User uploaderUser = findUserById(userId);
 
         try {
-            // Generate unique path for the file
             String originalFilename = request.getFile().getOriginalFilename();
             Long curriculumId = trackingHistory.getCurriculumTracking().getCurriculum().getId();
             String firebasePath = firebaseStorageService.generateCurriculumTrackingPath(
                     curriculumId, request.getTrackingHistoryId(), originalFilename);
 
-            // Upload to Firebase
             String firebaseUrl = firebaseStorageService.uploadFile(request.getFile(), firebasePath);
 
-            // Determine document version
             int version = getNextDocumentVersion(request.getDocumentName(), request.getTrackingHistoryId());
 
             // Create document record
@@ -76,7 +76,7 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
                     .fileExtension(getFileExtension(originalFilename))
                     .description(request.getDescription())
                     .uploadedBy(userId)
-                    .uploadedByEmail(userEmail)
+                    .uploadedByEmail(uploaderUser.getEmail())
                     .documentVersion(version)
                     .build();
 
@@ -140,7 +140,7 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
         CurriculumTrackingDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found with ID: " + documentId));
 
-        return trackingMapper.toDocumentDto(document);
+        return toDocumentDtoWithFreshUrl(document);
     }
 
     @Override
@@ -151,7 +151,9 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
         List<CurriculumTrackingDocument> documents = documentRepository
                 .findByTrackingHistoryIdAndIsActiveOrderByUploadedAtDesc(trackingHistoryId, true);
 
-        return trackingMapper.toDocumentDtoList(documents);
+        return documents.stream()
+                .map(this::toDocumentDtoWithFreshUrl)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -162,7 +164,9 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
         List<CurriculumTrackingDocument> documents = documentRepository
                 .findByCurriculumTrackingId(curriculumTrackingId);
 
-        return trackingMapper.toDocumentDtoList(documents);
+        return documents.stream()
+                .map(this::toDocumentDtoWithFreshUrl)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -180,11 +184,56 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
         }
 
         try {
-            return firebaseStorageService.getFileDownloadUrl(document.getFirebasePath());
+            return firebaseStorageService.refreshSignedUrl(document.getFirebasePath());
         } catch (Exception e) {
             log.error("Failed to get download URL for document {}: {}", documentId, e.getMessage());
             throw new BadRequestException("Failed to generate download URL: " + e.getMessage());
         }
+    }
+
+    @Override
+    public String refreshDocumentUrl(Long documentId, String authToken) {
+        log.debug("Refreshing URL for document ID: {}", documentId);
+
+        validateDocumentAccess(documentId, authToken);
+
+        CurriculumTrackingDocument document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found with ID: " + documentId));
+
+        if (!document.isActive()) {
+            throw new BadRequestException("Document is no longer active");
+        }
+
+        try {
+            String freshUrl = firebaseStorageService.refreshSignedUrl(document.getFirebasePath());
+            document.setFirebaseUrl(freshUrl);
+            documentRepository.save(document);
+
+            log.info("Refreshed URL for document ID: {}", documentId);
+            return freshUrl;
+        } catch (Exception e) {
+            log.error("Failed to refresh URL for document {}: {}", documentId, e.getMessage());
+            throw new BadRequestException("Failed to refresh document URL: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<String> refreshMultipleDocumentUrls(List<Long> documentIds, String authToken) {
+        log.debug("Refreshing URLs for {} documents", documentIds.size());
+
+        List<String> refreshedUrls = new ArrayList<>();
+
+        for (Long documentId : documentIds) {
+            try {
+                String refreshedUrl = refreshDocumentUrl(documentId, authToken);
+                refreshedUrls.add(refreshedUrl);
+            } catch (Exception e) {
+                log.warn("Failed to refresh URL for document {}: {}", documentId, e.getMessage());
+                refreshedUrls.add(null);
+            }
+        }
+
+        return refreshedUrls;
     }
 
     @Override
@@ -210,7 +259,9 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
         Page<CurriculumTrackingDocument> documentsPage = documentRepository
                 .searchDocuments(searchTerm, pageable);
 
-        return trackingMapper.toDocumentDtoList(documentsPage.getContent());
+        return documentsPage.getContent().stream()
+                .map(this::toDocumentDtoWithFreshUrl)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -221,7 +272,9 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
         List<CurriculumTrackingDocument> documents = documentRepository
                 .findByContentTypeAndIsActiveOrderByUploadedAtDesc(contentType, true);
 
-        return trackingMapper.toDocumentDtoList(documents);
+        return documents.stream()
+                .map(this::toDocumentDtoWithFreshUrl)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -232,7 +285,9 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
         List<CurriculumTrackingDocument> versions = documentRepository
                 .findVersionsByDocumentName(documentName, trackingHistoryId);
 
-        return trackingMapper.toDocumentDtoList(versions);
+        return versions.stream()
+                .map(this::toDocumentDtoWithFreshUrl)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -245,7 +300,7 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "No document found with name: " + documentName + " in tracking history: " + trackingHistoryId));
 
-        return trackingMapper.toDocumentDto(latestVersion);
+        return toDocumentDtoWithFreshUrl(latestVersion);
     }
 
     @Override
@@ -261,7 +316,7 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
         CurriculumTrackingDocument updatedDocument = documentRepository.save(document);
 
         log.info("Successfully updated description for document ID: {}", documentId);
-        return trackingMapper.toDocumentDto(updatedDocument);
+        return toDocumentDtoWithFreshUrl(updatedDocument);
     }
 
     @Override
@@ -272,7 +327,7 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
         Long totalStorageUsed = documentRepository.getTotalStorageUsed();
         List<Object[]> statsByContentType = documentRepository.getStorageStatsByContentType();
 
-        Map<String, Object> stats = Map.of(
+        return Map.of(
                 "totalStorageUsed", totalStorageUsed != null ? totalStorageUsed : 0L,
                 "totalStorageUsedFormatted", formatFileSize(totalStorageUsed != null ? totalStorageUsed : 0L),
                 "totalDocuments", documentRepository.count(),
@@ -286,10 +341,9 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
                                         "totalSize", row[2],
                                         "totalSizeFormatted", formatFileSize((Long) row[2])
                                 )
-                        ))
+                        )),
+                "signedUrlDurationHours", firebaseStorageService.getSignedUrlDurationHours()
         );
-
-        return stats;
     }
 
     @Override
@@ -306,6 +360,23 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
         return String.format("%d_%s_%s.%s", trackingHistoryId, timestamp, uuid, extension);
     }
 
+    /**
+     * Convert document to DTO with fresh signed URL
+     */
+    private CurriculumTrackingDocumentDto toDocumentDtoWithFreshUrl(CurriculumTrackingDocument document) {
+        CurriculumTrackingDocumentDto dto = trackingMapper.toDocumentDto(document);
+
+        if (dto != null && document.isActive()) {
+            try {
+                String freshUrl = firebaseStorageService.refreshSignedUrl(document.getFirebasePath());
+                dto.setFirebaseUrl(freshUrl);
+            } catch (Exception e) {
+                log.warn("Failed to generate fresh URL for document {}: {}", document.getId(), e.getMessage());
+            }
+        }
+
+        return dto;
+    }
 
     private void validateUploadRequest(DocumentUploadRequest request, String authToken) {
         if (request == null) {
@@ -333,13 +404,12 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
             throw new BadRequestException("At least one file is required");
         }
 
-        if (files.size() > 10) { // Limit multiple uploads
+        if (files.size() > 10) {
             throw new BadRequestException("Cannot upload more than 10 files at once");
         }
 
         validateUserAccess(authToken);
 
-        // Validate each file
         for (MultipartFile file : files) {
             if (file != null && !file.isEmpty()) {
                 firebaseStorageService.validateFile(file);
@@ -363,7 +433,6 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
         Long userId = authenticationService.getUserIdFromToken(authToken);
         List<String> userRoles = authenticationService.getRolesFromToken(authToken);
 
-        // Allow QA full access, others can access documents they uploaded or are assigned to
         if (!userRoles.contains("QA")) {
             CurriculumTrackingDocument document = documentRepository.findById(documentId)
                     .orElseThrow(() -> new ResourceNotFoundException("Document not found with ID: " + documentId));
@@ -379,6 +448,11 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
     private CurriculumTrackingHistory findTrackingHistoryById(Long trackingHistoryId) {
         return historyRepository.findById(trackingHistoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tracking history not found with ID: " + trackingHistoryId));
+    }
+
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
     }
 
     private int getNextDocumentVersion(String documentName, Long trackingHistoryId) {

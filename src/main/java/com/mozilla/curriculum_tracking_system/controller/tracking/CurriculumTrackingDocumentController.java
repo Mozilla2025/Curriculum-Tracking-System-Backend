@@ -13,7 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("${api.prefix}/tracking/documents")
@@ -252,6 +254,48 @@ public class CurriculumTrackingDocumentController {
         ApiResponse apiResponse = new ApiResponse(
                 "Storage statistics retrieved successfully",
                 stats
+        );
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PostMapping("/{documentId}/refresh-url")
+    public ResponseEntity<ApiResponse> refreshDocumentUrl(
+            @PathVariable Long documentId,
+            @RequestHeader("Authorization") String authorizationHeader) {
+
+        log.debug("POST /tracking/documents/{}/refresh-url", documentId);
+
+        String token = extractToken(authorizationHeader);
+        String refreshedUrl = documentService.refreshDocumentUrl(documentId, token);
+
+        ApiResponse apiResponse = new ApiResponse(
+                "Document URL refreshed successfully",
+                Map.of("documentId", documentId, "refreshedUrl", refreshedUrl)
+        );
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+
+    @PostMapping("/refresh-urls")
+    public ResponseEntity<ApiResponse> refreshMultipleDocumentUrls(
+            @RequestBody List<Long> documentIds,
+            @RequestHeader("Authorization") String authorizationHeader) {
+
+        log.debug("POST /tracking/documents/refresh-urls - documentIds: {}", documentIds);
+
+        String token = extractToken(authorizationHeader);
+        List<String> refreshedUrls = documentService.refreshMultipleDocumentUrls(documentIds, token);
+
+        Map<String, Object> response = new HashMap<>();
+        for (int i = 0; i < documentIds.size(); i++) {
+            response.put(documentIds.get(i).toString(), refreshedUrls.get(i));
+        }
+
+        ApiResponse apiResponse = new ApiResponse(
+                "Document URLs refreshed successfully",
+                response
         );
 
         return ResponseEntity.ok(apiResponse);
