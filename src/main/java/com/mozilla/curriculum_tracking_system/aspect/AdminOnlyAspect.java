@@ -3,6 +3,7 @@ package com.mozilla.curriculum_tracking_system.aspect;
 import java.nio.file.AccessDeniedException;
 
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -23,7 +24,25 @@ import lombok.extern.slf4j.Slf4j;
 public class AdminOnlyAspect {
     private final JwtUtil jwtUtil;
 
+    @Around("@annotation(adminOnly)")
     public Object checkAdminAccess(ProceedingJoinPoint joinPoint, AdminOnly adminOnly) throws Throwable {
+        String token = getRequestAttributes();
+
+        if (jwtUtil.hasRole(token, RoleConstants.QA)) {
+            log.debug("QA user accessing admin-only resource");
+            return joinPoint.proceed();
+        }
+
+        if (jwtUtil.hasRole(token, RoleConstants.ADMIN)) {
+            log.debug("Admin user accessing admin-only resource");
+            return joinPoint.proceed();
+        }
+
+        log.warn("Non-admin user attempted to access admin-only resource");
+        throw new AccessDeniedException(adminOnly.message());
+    }
+
+    private static String getRequestAttributes() throws AccessDeniedException {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attributes == null) {
             throw new AccessDeniedException("Unable to access request context");
@@ -33,15 +52,9 @@ public class AdminOnlyAspect {
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new AccessDeniedException("No Valid token provided");
-            
+            throw new AccessDeniedException("No valid token provided");
         }
 
-        String token = authHeader.substring(7);
-
-        if (!jwtUtil.hasRole(token, RoleConstants.ADMIN)) {
-            throw new AccessDeniedException(adminOnly.message());
-        }
-        return joinPoint.proceed();
+        return authHeader.substring(7);
     }
 }
