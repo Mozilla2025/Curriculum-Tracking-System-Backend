@@ -1,6 +1,6 @@
 package com.mozilla.curriculum_tracking_system.repository.curriculum;
 
-import com.mozilla.curriculum_tracking_system.enums.CurriculumStatus;
+import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStatus;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,7 +39,7 @@ public interface CurriculumRepository extends JpaRepository<Curriculum, Long>, J
     List<Curriculum> findCurriculumsExpiringSoon(@Param("startDate") LocalDateTime startDate,
                                                  @Param("endDate") LocalDateTime endDate);
 
-    long countByStatus(CurriculumStatus status);
+    long countByStatus(CurriculumTrackingStatus status);
 
 
     boolean existsByNameAndDepartmentIdAndAcademicLevelIdAndIdNot(String name, Long departmentId,

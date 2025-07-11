@@ -1,6 +1,6 @@
 package com.mozilla.curriculum_tracking_system.dto.curriculum;
 
-import com.mozilla.curriculum_tracking_system.enums.CurriculumStatus;
+import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class CurriculumSearchCriteria {
     private String name;
     private String code;
-    private CurriculumStatus status;
+    private CurriculumTrackingStatus status;
     private Long schoolId;
     private Long departmentId;
     private Long academicLevelId;

@@ -1,9 +1,9 @@
 package com.mozilla.curriculum_tracking_system.model.curriculum;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStatus;
 import com.mozilla.curriculum_tracking_system.model.school.School;
 import com.mozilla.curriculum_tracking_system.model.department.Department;
-import com.mozilla.curriculum_tracking_system.enums.CurriculumStatus;
 import com.mozilla.curriculum_tracking_system.model.academic.AcademicLevel;
 import com.mozilla.curriculum_tracking_system.model.comment.Comment;
 
@@ -42,7 +42,7 @@ public class Curriculum {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default
-    private CurriculumStatus status = CurriculumStatus.PENDING;
+    private CurriculumTrackingStatus status = CurriculumTrackingStatus.UNDER_REVIEW;
 
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
@@ -101,6 +101,6 @@ public class Curriculum {
     }
 
     public void putUnderReview() {
-        this.status = CurriculumStatus.UNDER_REVIEW;
+        this.status = CurriculumTrackingStatus.UNDER_REVIEW;
     }
 }

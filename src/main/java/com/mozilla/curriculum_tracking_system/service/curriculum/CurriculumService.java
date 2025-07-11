@@ -2,7 +2,7 @@ package com.mozilla.curriculum_tracking_system.service.curriculum;
 
 import com.mozilla.curriculum_tracking_system.constants.CacheConstants;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.*;
-import com.mozilla.curriculum_tracking_system.enums.CurriculumStatus;
+import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStatus;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
 import com.mozilla.curriculum_tracking_system.exception.UnauthorizedException;
@@ -273,10 +273,11 @@ public class CurriculumService implements ICurriculumService {
     public CurriculumStatusStats getCurriculumStats() {
         return CurriculumStatusStats.builder()
                 .totalCurriculums(curriculumRepository.count())
-                .pendingCurriculums(curriculumRepository.countByStatus(CurriculumStatus.PENDING))
-                .approvedCurriculums(curriculumRepository.countByStatus(CurriculumStatus.APPROVED))
-                .rejectedCurriculums(curriculumRepository.countByStatus(CurriculumStatus.REJECTED))
-                .underReviewCurriculums(curriculumRepository.countByStatus(CurriculumStatus.UNDER_REVIEW))
+                .minorRevampCurriculums(curriculumRepository.countByStatus(CurriculumTrackingStatus.MINOR_REVAMP))
+                .majorRevampCurriculums(curriculumRepository.countByStatus(CurriculumTrackingStatus.MAJOR_REVAMP))
+                .accreditedCurriculums(curriculumRepository.countByStatus(CurriculumTrackingStatus.ACCREDITED))
+                .approvedCurriculums(curriculumRepository.countByStatus(CurriculumTrackingStatus.APPROVED_BY_CUE))
+                .underReviewCurriculums(curriculumRepository.countByStatus(CurriculumTrackingStatus.UNDER_REVIEW))
                 .build();
     }
 

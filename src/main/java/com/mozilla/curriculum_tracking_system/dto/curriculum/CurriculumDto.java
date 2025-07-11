@@ -1,6 +1,6 @@
 package com.mozilla.curriculum_tracking_system.dto.curriculum;
 
-import com.mozilla.curriculum_tracking_system.enums.CurriculumStatus;
+import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,7 +17,7 @@ public class CurriculumDto {
     private String name;
     private String code;
     private Integer durationSemesters;
-    private CurriculumStatus status;
+    private CurriculumTrackingStatus status;
     private Long createdBy;
     private Long approvedBy;
     private LocalDateTime approvedAt;
