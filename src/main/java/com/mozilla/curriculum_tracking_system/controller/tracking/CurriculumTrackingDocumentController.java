@@ -4,7 +4,7 @@ import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingDoc
 import com.mozilla.curriculum_tracking_system.dto.tracking.DocumentUploadRequest;
 import com.mozilla.curriculum_tracking_system.dto.tracking.DocumentUploadResponse;
 import com.mozilla.curriculum_tracking_system.response.ApiResponse;
-import com.mozilla.curriculum_tracking_system.service.tracking.ICurriculumTrackingDocumentService;
+import com.mozilla.curriculum_tracking_system.service.curriculumdocuments.ICurriculumTrackingDocumentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

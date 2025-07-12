@@ -3,7 +3,7 @@ package com.mozilla.curriculum_tracking_system.service.school;
 
 import com.mozilla.curriculum_tracking_system.dto.school.SchoolDto;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
-import com.mozilla.curriculum_tracking_system.mapper.SchoolMapper;
+import com.mozilla.curriculum_tracking_system.mapper.school.SchoolMapper;
 import com.mozilla.curriculum_tracking_system.model.school.School;
 import com.mozilla.curriculum_tracking_system.repository.school.SchoolRepository;
 import lombok.RequiredArgsConstructor;

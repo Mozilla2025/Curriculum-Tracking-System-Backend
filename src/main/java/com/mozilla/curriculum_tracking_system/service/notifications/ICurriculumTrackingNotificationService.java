@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.service.tracking;
+package com.mozilla.curriculum_tracking_system.service.notifications;
 
 /**
  * Service interface for curriculum tracking notifications

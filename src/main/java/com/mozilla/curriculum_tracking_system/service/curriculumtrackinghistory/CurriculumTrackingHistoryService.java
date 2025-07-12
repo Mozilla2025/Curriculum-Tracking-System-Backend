@@ -1,9 +1,10 @@
-package com.mozilla.curriculum_tracking_system.service.tracking;
+package com.mozilla.curriculum_tracking_system.service.curriculumtrackinghistory;
 
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingHistoryDto;
 import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
-import com.mozilla.curriculum_tracking_system.mapper.CurriculumTrackingMapper;
+import com.mozilla.curriculum_tracking_system.mapper.curriculum.CurriculumTrackingHistoryMapper;
+import com.mozilla.curriculum_tracking_system.mapper.curriculum.CurriculumTrackingMapper;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTrackingHistory;
 import com.mozilla.curriculum_tracking_system.repository.tracking.CurriculumTrackingHistoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,6 +24,7 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
 
     private final CurriculumTrackingHistoryRepository historyRepository;
     private final CurriculumTrackingMapper trackingMapper;
+    private final CurriculumTrackingHistoryMapper curriculumTrackingHistoryMapper;
 
     @Override
     public List<CurriculumTrackingHistoryDto> getTrackingHistory(Long curriculumTrackingId) {
@@ -31,7 +32,7 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
 
         List<CurriculumTrackingHistory> history = historyRepository
                 .findByCurriculumTrackingIdOrderByActionDateDesc(curriculumTrackingId);
-        return trackingMapper.toHistoryDtoList(history);
+        return curriculumTrackingHistoryMapper.toDtoList(history);
     }
 
     @Override
@@ -41,7 +42,7 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
         List<CurriculumTrackingHistory> history = historyRepository
                 .findByCurriculumTrackingId(curriculumTrackingId, pageable)
                 .getContent();
-        return trackingMapper.toHistoryDtoList(history);
+        return curriculumTrackingHistoryMapper.toDtoList(history);
     }
 
     @Override
@@ -52,7 +53,7 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
         Pageable pageable = PageRequest.of(0, limit);
         List<CurriculumTrackingHistory> recentHistory = historyRepository
                 .findRecentByCurriculumTrackingId(curriculumTrackingId, pageable);
-        return trackingMapper.toHistoryDtoList(recentHistory);
+        return curriculumTrackingHistoryMapper.toDtoList(recentHistory);
     }
 
     @Override
@@ -63,7 +64,7 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
         if (history == null) {
             throw new ResourceNotFoundException("Tracking history not found with ID: " + historyId);
         }
-        return trackingMapper.toHistoryDto(history);
+        return curriculumTrackingHistoryMapper.toDto(history);
     }
 
     @Override
@@ -73,7 +74,7 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
         List<CurriculumTrackingHistory> milestones = historyRepository
                 .findMilestonesByCurriculumTrackingId(curriculumTrackingId);
 
-        return trackingMapper.toHistoryDtoList(milestones);
+        return curriculumTrackingHistoryMapper.toDtoList(milestones);
     }
 
     @Override
@@ -86,7 +87,7 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
                 .filter(CurriculumTrackingHistory::isStageTransition)
                 .toList();
 
-        return trackingMapper.toHistoryDtoList(transitions);
+        return curriculumTrackingHistoryMapper.toDtoList(transitions);
     }
 
     @Override
@@ -97,7 +98,7 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
                 .findByPerformedByOrderByActionDateDesc(userId, pageable)
                 .getContent();
 
-        return trackingMapper.toHistoryDtoList(history);
+        return curriculumTrackingHistoryMapper.toDtoList(history);
     }
 
     @Override
@@ -108,7 +109,7 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
                 .findByAssignedToOrderByActionDateDesc(userId, pageable)
                 .getContent();
 
-        return trackingMapper.toHistoryDtoList(history);
+        return curriculumTrackingHistoryMapper.toDtoList(history);
     }
 
     @Override
@@ -118,7 +119,7 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
         List<CurriculumTrackingHistory> history = historyRepository
                 .searchInComments(searchTerm);
 
-        return trackingMapper.toHistoryDtoList(history);
+        return curriculumTrackingHistoryMapper.toDtoList(history);
     }
 
     @Override
@@ -148,7 +149,7 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
         log.info("Successfully added history entry with ID: {} for tracking: {}",
                 savedHistory.getId(), savedHistory.getCurriculumTracking().getId());
 
-        return trackingMapper.toHistoryDto(savedHistory);
+        return curriculumTrackingHistoryMapper.toDto(savedHistory);
     }
 
 
@@ -159,7 +160,7 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
         List<CurriculumTrackingHistory> overdueItems = historyRepository
                 .findOverdueItems(LocalDateTime.now());
 
-        return trackingMapper.toHistoryDtoList(overdueItems);
+        return curriculumTrackingHistoryMapper.toDtoList(overdueItems);
     }
 
     @Override
@@ -193,7 +194,6 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
 
     private boolean isForwardMovement(CurriculumTrackingStage fromStage, CurriculumTrackingStage toStage) {
 
-        // Define stage order for forward movement detection
         List<CurriculumTrackingStage> stageOrder = List.of(
                 CurriculumTrackingStage.SCHOOL_BOARD,
                 CurriculumTrackingStage.DEAN_COMMITTEE,

@@ -35,6 +35,4 @@ public class CurriculumTrackingDto {
     private String notes;
     private boolean isActive;
     private boolean isCompleted;
-    private int totalHistoryEntries;
-    private int totalDocuments;
 }

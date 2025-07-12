@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.service.tracking;
+package com.mozilla.curriculum_tracking_system.service.curriculumtracking;
 
 import com.mozilla.curriculum_tracking_system.dto.tracking.*;
 import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;

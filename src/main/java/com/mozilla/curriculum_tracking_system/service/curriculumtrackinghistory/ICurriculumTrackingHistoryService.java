@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.service.tracking;
+package com.mozilla.curriculum_tracking_system.service.curriculumtrackinghistory;
 
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingHistoryDto;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTrackingHistory;

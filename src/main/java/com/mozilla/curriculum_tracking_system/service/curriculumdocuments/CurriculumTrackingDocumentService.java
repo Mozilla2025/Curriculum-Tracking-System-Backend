@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.service.tracking;
+package com.mozilla.curriculum_tracking_system.service.curriculumdocuments;
 
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingDocumentDto;
 import com.mozilla.curriculum_tracking_system.dto.tracking.DocumentUploadRequest;
@@ -6,7 +6,7 @@ import com.mozilla.curriculum_tracking_system.dto.tracking.DocumentUploadRespons
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
 import com.mozilla.curriculum_tracking_system.exception.UnauthorizedException;
-import com.mozilla.curriculum_tracking_system.mapper.CurriculumTrackingMapper;
+import com.mozilla.curriculum_tracking_system.mapper.curriculum.CurriculumTrackingDocumentMapper;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTrackingDocument;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTrackingHistory;
 import com.mozilla.curriculum_tracking_system.model.user.User;
@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,7 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
     private final CurriculumTrackingDocumentRepository documentRepository;
     private final CurriculumTrackingHistoryRepository historyRepository;
     private final UserRepository userRepository;
-    private final CurriculumTrackingMapper trackingMapper;
+    private final CurriculumTrackingDocumentMapper documentMapper;
     private final IFirebaseStorageService firebaseStorageService;
     private final IAuthenticationService authenticationService;
 
@@ -85,7 +84,7 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
             log.info("Successfully uploaded document with ID: {} for tracking history: {}",
                     savedDocument.getId(), request.getTrackingHistoryId());
 
-            return trackingMapper.buildDocumentUploadResponse(savedDocument, "Document uploaded successfully");
+            return documentMapper.buildUploadResponse(savedDocument, "Document uploaded successfully");
 
         } catch (Exception e) {
             log.error("Failed to upload document: {}", e.getMessage(), e);
@@ -364,7 +363,7 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
      * Convert document to DTO with fresh signed URL
      */
     private CurriculumTrackingDocumentDto toDocumentDtoWithFreshUrl(CurriculumTrackingDocument document) {
-        CurriculumTrackingDocumentDto dto = trackingMapper.toDocumentDto(document);
+        CurriculumTrackingDocumentDto dto = documentMapper.toDto(document);
 
         if (dto != null && document.isActive()) {
             try {

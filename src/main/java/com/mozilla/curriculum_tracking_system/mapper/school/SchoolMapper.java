@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.mapper;
+package com.mozilla.curriculum_tracking_system.mapper.school;
 
 import com.mozilla.curriculum_tracking_system.dto.school.SchoolDto;
 import com.mozilla.curriculum_tracking_system.model.school.School;

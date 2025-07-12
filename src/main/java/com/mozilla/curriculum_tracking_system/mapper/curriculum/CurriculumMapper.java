@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.mapper;
+package com.mozilla.curriculum_tracking_system.mapper.curriculum;
 
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CreateCurriculumRequest;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CurriculumDto;

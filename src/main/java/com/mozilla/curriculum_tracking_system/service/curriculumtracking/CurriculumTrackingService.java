@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.service.tracking;
+package com.mozilla.curriculum_tracking_system.service.curriculumtracking;
 
 import com.mozilla.curriculum_tracking_system.dto.tracking.*;
 import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;
@@ -7,7 +7,8 @@ import com.mozilla.curriculum_tracking_system.enums.TrackingActionType;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
 import com.mozilla.curriculum_tracking_system.exception.UnauthorizedException;
-import com.mozilla.curriculum_tracking_system.mapper.CurriculumTrackingMapper;
+import com.mozilla.curriculum_tracking_system.mapper.curriculum.CurriculumTrackingHistoryMapper;
+import com.mozilla.curriculum_tracking_system.mapper.curriculum.CurriculumTrackingMapper;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTrackingHistory;
@@ -16,6 +17,8 @@ import com.mozilla.curriculum_tracking_system.repository.curriculum.CurriculumRe
 import com.mozilla.curriculum_tracking_system.repository.tracking.CurriculumTrackingRepository;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
+import com.mozilla.curriculum_tracking_system.service.curriculumdocuments.ICurriculumTrackingDocumentService;
+import com.mozilla.curriculum_tracking_system.service.curriculumtrackinghistory.ICurriculumTrackingHistoryService;
 import com.mozilla.curriculum_tracking_system.util.CurriculumTrackingSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +43,7 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
     private final CurriculumRepository curriculumRepository;
     private final UserRepository userRepository;
     private final CurriculumTrackingMapper trackingMapper;
+    private final CurriculumTrackingHistoryMapper curriculumTrackingHistoryMapper;
     private final IAuthenticationService authenticationService;
     private final ICurriculumTrackingHistoryService historyService;
     private final ICurriculumTrackingDocumentService documentService;
@@ -365,7 +369,7 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
                 })
                 .collect(Collectors.toList());
 
-        return trackingMapper.buildTimelineDto(tracking, history);
+        return curriculumTrackingHistoryMapper.buildTimelineDto(tracking, history);
     }
 
     @Override

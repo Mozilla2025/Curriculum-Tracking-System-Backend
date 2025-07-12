@@ -8,7 +8,7 @@ import com.mozilla.curriculum_tracking_system.dto.department.UpdateDepartmentReq
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
 import com.mozilla.curriculum_tracking_system.exception.UnauthorizedException;
-import com.mozilla.curriculum_tracking_system.mapper.DepartmentMapper;
+import com.mozilla.curriculum_tracking_system.mapper.department.DepartmentMapper;
 import com.mozilla.curriculum_tracking_system.model.department.Department;
 import com.mozilla.curriculum_tracking_system.model.school.School;
 import com.mozilla.curriculum_tracking_system.repository.department.DepartmentRepository;

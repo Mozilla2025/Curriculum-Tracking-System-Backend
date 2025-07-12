@@ -5,7 +5,7 @@ import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;
 import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStatus;
 import com.mozilla.curriculum_tracking_system.enums.TrackingActionType;
 import com.mozilla.curriculum_tracking_system.response.ApiResponse;
-import com.mozilla.curriculum_tracking_system.service.tracking.ICurriculumTrackingService;
+import com.mozilla.curriculum_tracking_system.service.curriculumtracking.ICurriculumTrackingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

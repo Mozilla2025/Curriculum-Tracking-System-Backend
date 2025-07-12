@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.service.tracking;
+package com.mozilla.curriculum_tracking_system.service.curriculumdocuments;
 
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingDocumentDto;
 import com.mozilla.curriculum_tracking_system.dto.tracking.DocumentUploadRequest;

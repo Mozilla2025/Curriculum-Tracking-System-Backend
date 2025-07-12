@@ -3,7 +3,7 @@ package com.mozilla.curriculum_tracking_system.controller.tracking;
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingHistoryDto;
 import com.mozilla.curriculum_tracking_system.response.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
-import com.mozilla.curriculum_tracking_system.service.tracking.ICurriculumTrackingHistoryService;
+import com.mozilla.curriculum_tracking_system.service.curriculumtrackinghistory.ICurriculumTrackingHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
