@@ -86,19 +86,7 @@ public class CurriculumTrackingMapper {
                 .build();
     }
 
-    /**
-     * Convert CurriculumTracking entity to DTO with recent history
-     */
-    public CurriculumTrackingDto toDtoWithRecentHistory(CurriculumTracking tracking,
-                                                        List<CurriculumTrackingHistory> recentHistory) {
-        CurriculumTrackingDto dto = toDto(tracking);
-        if (dto != null && recentHistory != null) {
-            dto.setRecentHistory(recentHistory.stream()
-                    .map(this::toHistoryDto)
-                    .collect(Collectors.toList()));
-        }
-        return dto;
-    }
+
 
     /**
      * Convert CurriculumTrackingHistory entity to DTO

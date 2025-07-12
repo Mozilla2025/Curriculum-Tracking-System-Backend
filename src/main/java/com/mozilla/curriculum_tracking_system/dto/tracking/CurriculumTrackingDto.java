@@ -37,5 +37,4 @@ public class CurriculumTrackingDto {
     private boolean isCompleted;
     private int totalHistoryEntries;
     private int totalDocuments;
-    private List<CurriculumTrackingHistoryDto> recentHistory;
 }
