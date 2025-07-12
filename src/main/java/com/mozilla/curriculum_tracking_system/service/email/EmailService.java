@@ -163,12 +163,12 @@ public class EmailService implements IEmailService {
     }
 
     private String processTemplate(String templateName, Map<String, Object> variables) {
-        Context contex = new Context();
+        Context context = new Context();
         if (variables != null) {
-            contex.setVariables(variables);
+            context.setVariables(variables);
         }
 
-        return templateEngine.process("email/" + templateName, contex);
+        return templateEngine.process("email/" + templateName, context);
     }
 
     private String generatePlainTextVersion(String htmlContent) {
