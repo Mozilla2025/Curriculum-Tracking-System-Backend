@@ -345,19 +345,6 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
         );
     }
 
-    @Override
-    public void validateFileUpload(MultipartFile file) {
-        firebaseStorageService.validateFile(file);
-    }
-
-    @Override
-    public String generateUniqueFilename(String originalFilename, Long trackingHistoryId) {
-        String timestamp = String.valueOf(System.currentTimeMillis());
-        String uuid = UUID.randomUUID().toString().substring(0, 8);
-        String extension = getFileExtension(originalFilename);
-
-        return String.format("%d_%s_%s.%s", trackingHistoryId, timestamp, uuid, extension);
-    }
 
     /**
      * Convert document to DTO with fresh signed URL

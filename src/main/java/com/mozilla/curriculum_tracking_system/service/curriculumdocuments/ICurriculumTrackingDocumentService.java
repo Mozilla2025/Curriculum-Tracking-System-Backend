@@ -81,13 +81,5 @@ public interface ICurriculumTrackingDocumentService {
      */
     Object getStorageStatistics();
 
-    /**
-     * Validate file upload
-     */
-    void validateFileUpload(MultipartFile file);
 
-    /**
-     * Generate unique filename for Firebase storage
-     */
-    String generateUniqueFilename(String originalFilename, Long trackingHistoryId);
 }
