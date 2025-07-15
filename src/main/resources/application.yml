@@ -10,7 +10,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     properties:
       hibernate:
         default_schema: public
@@ -70,14 +70,6 @@ server:
   servlet:
     context-path: /
 
-
-firebase:
-  bucket-name: authentication-1a0c4.appspot.com
-  credentials:
-    path: curriculum-service.json
-
-
-
 app:
   jwtSecret: ${jwt.secret}
   jwtExpirationMs: ${jwt.expiration.ms}
@@ -117,3 +109,11 @@ logging:
               BasicBinder: TRACE
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss} - %msg%n'
+
+
+aws:
+  accessKeyId: ${aws.access.key}
+  secretKey: ${aws.secret.key}
+  s3:
+    bucket: ${aws.bucket.name}
+  region: ${aws.region}
