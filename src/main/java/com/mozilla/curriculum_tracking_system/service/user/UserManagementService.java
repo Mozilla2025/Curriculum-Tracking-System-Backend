@@ -7,7 +7,7 @@ import com.mozilla.curriculum_tracking_system.dto.user.AssignRoleRequest;
 import com.mozilla.curriculum_tracking_system.dto.user.UserResponse;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
-import com.mozilla.curriculum_tracking_system.mapper.UserMapper;
+import com.mozilla.curriculum_tracking_system.mapper.user.UserMapper;
 import com.mozilla.curriculum_tracking_system.model.roles.Role;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.roles.RoleRepository;
