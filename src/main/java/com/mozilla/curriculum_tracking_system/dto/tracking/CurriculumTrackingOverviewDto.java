@@ -16,11 +16,24 @@ import java.time.LocalDateTime;
 public class CurriculumTrackingOverviewDto {
     private Long id;
     private String trackingId;
+
     private Long curriculumId;
     private String curriculumName;
     private String curriculumCode;
-    private String departmentName;
+
+    private String displayCurriculumName;
+    private String displayCurriculumCode;
+
+    private String proposedCurriculumName;
+    private String proposedCurriculumCode;
+
+    private Long schoolId;
     private String schoolName;
+    private Long departmentId;
+    private String departmentName;
+    private Long academicLevelId;
+    private String academicLevelName;
+
     private TrackingStage currentStage;
     private String currentStageDisplayName;
     private TrackingStatus status;
@@ -30,4 +43,5 @@ public class CurriculumTrackingOverviewDto {
     private LocalDateTime createdAt;
     private LocalDateTime expectedCompletionDate;
     private Boolean isActive;
+    private Boolean isIdeationStage;
 }

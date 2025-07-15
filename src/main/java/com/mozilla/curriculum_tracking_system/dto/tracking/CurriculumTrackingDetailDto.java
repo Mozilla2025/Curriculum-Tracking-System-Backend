@@ -17,11 +17,28 @@ import java.util.List;
 public class CurriculumTrackingDetailDto {
     private Long id;
     private String trackingId;
+
     private Long curriculumId;
     private String curriculumName;
     private String curriculumCode;
-    private String departmentName;
+
+    private String displayCurriculumName;
+    private String displayCurriculumCode;
+
+    private String proposedCurriculumName;
+    private String proposedCurriculumCode;
+    private Integer proposedDurationSemesters;
+    private String curriculumDescription;
+    private LocalDateTime proposedEffectiveDate;
+    private LocalDateTime proposedExpiryDate;
+
+    private Long schoolId;
     private String schoolName;
+    private Long departmentId;
+    private String departmentName;
+    private Long academicLevelId;
+    private String academicLevelName;
+
     private TrackingStage currentStage;
     private String currentStageDisplayName;
     private TrackingStatus status;
@@ -37,5 +54,6 @@ public class CurriculumTrackingDetailDto {
     private LocalDateTime actualCompletionDate;
     private Boolean isActive;
     private Boolean isCompleted;
+    private Boolean isIdeationStage;
     private List<TrackingStepDto> recentSteps;
 }
