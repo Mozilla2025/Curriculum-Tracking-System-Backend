@@ -4,6 +4,9 @@ import com.mozilla.curriculum_tracking_system.enums.TrackingStage;
 import com.mozilla.curriculum_tracking_system.enums.TrackingStatus;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import com.mozilla.curriculum_tracking_system.model.user.User;
+import com.mozilla.curriculum_tracking_system.model.school.School;
+import com.mozilla.curriculum_tracking_system.model.department.Department;
+import com.mozilla.curriculum_tracking_system.model.academic.AcademicLevel;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -21,7 +24,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(of = "id")
-@ToString(exclude = {"curriculum", "initiatedBy", "currentAssignee", "trackingSteps"})
+@ToString(exclude = {"curriculum", "initiatedBy", "currentAssignee", "trackingSteps", "school", "department", "academicLevel"})
 public class CurriculumTracking {
 
     @Id
@@ -32,11 +35,41 @@ public class CurriculumTracking {
     private String trackingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "curriculum_id", nullable = false)
+    @JoinColumn(name = "curriculum_id")
     private Curriculum curriculum;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "school_id", nullable = false)
+    private School school;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
+    private Department department;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "academic_level_id", nullable = false)
+    private AcademicLevel academicLevel;
+
+    @Column(name = "proposed_curriculum_name", nullable = false)
+    private String proposedCurriculumName;
+
+    @Column(name = "proposed_curriculum_code")
+    private String proposedCurriculumCode;
+
+    @Column(name = "proposed_duration_semesters")
+    private Integer proposedDurationSemesters;
+
+    @Column(name = "curriculum_description", columnDefinition = "TEXT")
+    private String curriculumDescription;
+
+    @Column(name = "proposed_effective_date")
+    private LocalDateTime proposedEffectiveDate;
+
+    @Column(name = "proposed_expiry_date")
+    private LocalDateTime proposedExpiryDate;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "curriculum_stage", nullable = false)
+    @Column(name = "current_stage", nullable = false)
     private TrackingStage currentStage;
 
     @Enumerated(EnumType.STRING)
@@ -61,7 +94,7 @@ public class CurriculumTracking {
     private LocalDateTime actualCompletionDate;
 
     @Builder.Default
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
     @CreationTimestamp
@@ -78,7 +111,7 @@ public class CurriculumTracking {
 
     @PrePersist
     private void generateTrackingId() {
-        if (this.trackingId == null && this.curriculum != null) {
+        if (this.trackingId == null) {
             this.trackingId = generateUniqueTrackingId();
         }
         if (this.currentStage == null) {
@@ -90,10 +123,12 @@ public class CurriculumTracking {
     }
 
     private String generateUniqueTrackingId() {
-        String curriculumCode = curriculum.getCode() != null ?
-                curriculum.getCode().replaceAll("[^A-Z0-9]", "") : "CUR";
+        String departmentCode = (department != null && department.getCode() != null) ?
+                department.getCode().replaceAll("[^A-Z0-9]", "") : "DEPT";
+        String schoolCode = (school != null && school.getCode() != null) ?
+                school.getCode().replaceAll("[^A-Z0-9]", "") : "SCH";
         String timestamp = String.valueOf(System.currentTimeMillis()).substring(8);
-        return "TRK-" + curriculumCode + "-" + timestamp;
+        return "TRK-" + schoolCode + "-" + departmentCode + "-" + timestamp;
     }
 
     public void moveToNextStage() {
@@ -112,5 +147,21 @@ public class CurriculumTracking {
     public boolean isCompleted() {
         return this.currentStage == TrackingStage.ACCREDITED ||
                 this.actualCompletionDate != null;
+    }
+
+    public boolean isIdeationStage() {
+        return this.curriculum == null && this.currentStage == TrackingStage.IDEATION;
+    }
+
+    public void linkCurriculum(Curriculum curriculum) {
+        this.curriculum = curriculum;
+    }
+
+    public String getCurriculumDisplayName() {
+        return curriculum != null ? curriculum.getName() : proposedCurriculumName;
+    }
+
+    public String getCurriculumDisplayCode() {
+        return curriculum != null ? curriculum.getCode() : proposedCurriculumCode;
     }
 }

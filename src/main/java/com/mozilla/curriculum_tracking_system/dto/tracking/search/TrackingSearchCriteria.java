@@ -23,12 +23,18 @@ public class TrackingSearchCriteria {
     private Long currentAssigneeId;
     private Long schoolId;
     private Long departmentId;
+    private Long academicLevelId;
     private Long curriculumId;
-    private String searchTerm; // For curriculum name, code, or tracking ID
+
+    private String searchTerm;
+
     private LocalDateTime createdAfter;
     private LocalDateTime createdBefore;
     private LocalDateTime expectedCompletionBefore;
     private Boolean isActive;
     private Boolean isOverdue;
-}
 
+    private Boolean isIdeationStage;
+
+    private Boolean hasLinkedCurriculum;
+}

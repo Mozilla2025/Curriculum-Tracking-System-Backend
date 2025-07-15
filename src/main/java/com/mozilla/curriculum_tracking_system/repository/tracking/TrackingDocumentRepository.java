@@ -70,14 +70,13 @@ public interface TrackingDocumentRepository extends JpaRepository<TrackingDocume
         """)
     List<TrackingDocument> findByUploadedByIdAndActiveTrue(@Param("userId") Long userId);
 
-    List<TrackingDocument> findByUploadedAtBetweenAndActiveTrue(LocalDateTime startDate, LocalDateTime endDate);
+    List<TrackingDocument> findByUploadedAtBetweenAndIsActiveTrue(LocalDateTime startDate, LocalDateTime endDate);
 
-    boolean existsByFilePathAndActiveTrue(String filePath);
-    Optional<TrackingDocument> findByFilePathAndActiveTrue(String filePath);
+    boolean existsByFilePathAndIsActiveTrue(String filePath);
+    Optional<TrackingDocument> findByFilePathAndIsActiveTrue(String filePath);
 
-
-    long countByDocumentTypeAndActiveTrue(DocumentType type);
-    long countByUploadedAtBetweenAndActiveTrue(LocalDateTime startDate, LocalDateTime endDate);
+    long countByDocumentTypeAndIsActiveTrue(DocumentType type);
+    long countByUploadedAtBetweenAndIsActiveTrue(LocalDateTime startDate, LocalDateTime endDate);
 
     @Query("SELECT SUM(td.fileSize) FROM TrackingDocument td WHERE td.isActive = true")
     Long getTotalStorageUsed();
