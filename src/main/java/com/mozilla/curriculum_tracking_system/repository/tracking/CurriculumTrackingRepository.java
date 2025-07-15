@@ -224,7 +224,7 @@ public interface CurriculumTrackingRepository extends JpaRepository<CurriculumTr
     long countTrackingsWithLinkedCurriculum();
 
     @Query("""
-        SELECT AVG(EXTRACT(EPOCH FROM (ct.actualCompletionDate - ct.createdAt)) / 86400)
+        SELECT AVG(EXTRACT(EPOCH FROM ct.actualCompletionDate) - EXTRACT(EPOCH FROM ct.createdAt)) / 86400.0
         FROM CurriculumTracking ct 
         WHERE ct.actualCompletionDate IS NOT NULL
         """)
