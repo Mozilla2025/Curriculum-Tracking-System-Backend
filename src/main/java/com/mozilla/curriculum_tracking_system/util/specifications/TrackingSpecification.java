@@ -12,6 +12,10 @@ import java.util.List;
 
 public class TrackingSpecification {
 
+    public TrackingSpecification() {
+
+    }
+
     public static Specification<CurriculumTracking> withCriteria(TrackingSearchCriteria criteria) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();

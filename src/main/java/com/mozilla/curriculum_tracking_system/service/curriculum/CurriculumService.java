@@ -16,7 +16,7 @@ import com.mozilla.curriculum_tracking_system.repository.curriculum.CurriculumRe
 import com.mozilla.curriculum_tracking_system.repository.department.DepartmentRepository;
 import com.mozilla.curriculum_tracking_system.repository.school.SchoolRepository;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
-import com.mozilla.curriculum_tracking_system.util.CurriculumSpecification;
+import com.mozilla.curriculum_tracking_system.util.specifications.CurriculumSpecification;
 import com.mozilla.curriculum_tracking_system.util.CacheKeyGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;

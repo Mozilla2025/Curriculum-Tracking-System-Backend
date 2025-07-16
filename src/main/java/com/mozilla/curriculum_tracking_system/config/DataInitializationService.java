@@ -52,11 +52,11 @@ public class DataInitializationService implements CommandLineRunner {
     public void run(String... args) {
         log.info("Starting system data initialization...");
 
-//        initializeRoles();
-//        initializeDefaultAdmin();
-//        initializeAcademicLevels();
-//        initializeSchoolsAndDepartments();
-//        initializeCurriculums();
+        initializeRoles();
+        initializeDefaultAdmin();
+        initializeAcademicLevels();
+        initializeSchoolsAndDepartments();
+        initializeCurriculums();
 
         log.info("System data initialization completed successfully!");
     }
@@ -64,8 +64,8 @@ public class DataInitializationService implements CommandLineRunner {
     private void initializeRoles() {
         log.info("Initializing system roles...");
 
-        createRoleIfNotExists(RoleConstants.ADMIN, "System Administrator with full access");
-        createRoleIfNotExists(RoleConstants.VICE_CHANCELLOR, "Vice Chancellor of the institution");
+        createRoleIfNotExists(RoleConstants.ADMIN, "System Administrator with full access to some resources");
+        createRoleIfNotExists(RoleConstants.QA, "senior System Administrator with full access");
         createRoleIfNotExists(RoleConstants.DEAN, "Dean of a faculty or school");
         createRoleIfNotExists(RoleConstants.HEAD_OF_DEPARTMENT, "Head of a department");
         createRoleIfNotExists(RoleConstants.ASSISTANT_ROLE, "Assistant roles to dean");
