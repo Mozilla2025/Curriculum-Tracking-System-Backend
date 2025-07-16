@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.util;
+package com.mozilla.curriculum_tracking_system.util.specifications;
 
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CurriculumSearchCriteria;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
@@ -10,6 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CurriculumSpecification {
+
+    public CurriculumSpecification() {
+
+    }
 
     public static Specification<Curriculum> withCriteria(CurriculumSearchCriteria criteria) {
         return (root, query, criteriaBuilder) -> {

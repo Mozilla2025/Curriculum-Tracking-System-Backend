@@ -23,9 +23,7 @@ public class TrackingStagePermissionHelper {
 
         return switch (stage) {
             case IDEATION -> userRoles.stream().anyMatch(DEPARTMENT_ROLES::contains);
-            case REVIEW_APPROVAL -> userRoles.stream().anyMatch(role ->
-                    QA_ROLES.contains(role) || DEAN_ROLES.contains(role));
-            case SCHOOL_BOARD, DEAN_COMMITTEE -> userRoles.stream().anyMatch(role ->
+            case REVIEW_APPROVAL, SCHOOL_BOARD, DEAN_COMMITTEE -> userRoles.stream().anyMatch(role ->
                     QA_ROLES.contains(role) || DEAN_ROLES.contains(role));
             case SENATE, QA_INTERNAL_AUDIT, CUE_EXTERNAL_AUDIT,
                  VICE_CHANCELLOR_APPROVAL, ACCREDITED -> userRoles.stream().anyMatch(QA_ROLES::contains);
