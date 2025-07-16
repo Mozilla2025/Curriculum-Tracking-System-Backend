@@ -24,24 +24,6 @@ public class TrackingIdGenerator {
     }
 
     /**
-     * Generate a tracking ID with custom components
-     */
-    public String generateTrackingId(String... components) {
-        StringBuilder builder = new StringBuilder(PREFIX);
-
-        for (String component : components) {
-            if (component != null && !component.trim().isEmpty()) {
-                builder.append(SEPARATOR).append(cleanCode(component, "X"));
-            }
-        }
-
-        String timestamp = String.valueOf(System.currentTimeMillis()).substring(8);
-        builder.append(SEPARATOR).append(timestamp);
-
-        return builder.toString();
-    }
-
-    /**
      * Generate tracking ID for ideation stage (when curriculum doesn't exist yet)
      */
     public String generateIdeationTrackingId(String proposedCurriculumCode, String departmentCode, String schoolCode) {
