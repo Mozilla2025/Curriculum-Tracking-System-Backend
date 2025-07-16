@@ -62,7 +62,8 @@ public class TrackingDocumentStorageService extends S3StorageService implements 
     private final TrackingStepRepository stepRepository;
     private final UserRepository userRepository;
     private final TrackingDocumentMapper documentMapper;
-    @Value("{aws.s3.bucket}")
+
+    @Value("${aws.s3.bucket:curriculumstorage}")
     private String trackingDocumentBucket;
 
     public TrackingDocumentStorageService(

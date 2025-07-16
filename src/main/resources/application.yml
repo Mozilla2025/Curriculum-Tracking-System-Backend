@@ -10,7 +10,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     properties:
       hibernate:
         default_schema: public
@@ -38,6 +38,11 @@ spring:
             required: true
           ssl:
             trust: smtp.gmail.com
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
 
   # Redis Cloud Configuration
   data:
@@ -88,8 +93,10 @@ app:
     ttl:
       departments: 1800
       schools: 3600
+
 api:
   prefix: api/v1
+
 logging:
   level:
     com:
@@ -109,7 +116,6 @@ logging:
               BasicBinder: TRACE
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss} - %msg%n'
-
 
 aws:
   accessKeyId: ${aws.access.key}
