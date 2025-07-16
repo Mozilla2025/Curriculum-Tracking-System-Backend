@@ -3,7 +3,6 @@ package com.mozilla.curriculum_tracking_system.service.user;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -21,7 +20,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email"));
     }
 
-   
 
     @Transactional
     public UserDetails loadUserById(Long id) throws UsernameNotFoundException {

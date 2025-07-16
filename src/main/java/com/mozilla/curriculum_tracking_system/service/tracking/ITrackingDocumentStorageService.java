@@ -1,7 +1,8 @@
-package com.mozilla.curriculum_tracking_system.service.storage;
+package com.mozilla.curriculum_tracking_system.service.tracking;
 
 import com.mozilla.curriculum_tracking_system.dto.tracking.TrackingDocumentDto;
 import com.mozilla.curriculum_tracking_system.enums.DocumentType;
+import com.mozilla.curriculum_tracking_system.service.storage.IS3StorageService;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
@@ -292,5 +293,6 @@ public interface ITrackingDocumentStorageService extends IS3StorageService {
             boolean valid,
             String errorMessage,
             List<String> warnings
-    ) {}
+    ) {
+    }
 }

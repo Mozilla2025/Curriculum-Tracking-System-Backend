@@ -1,10 +1,10 @@
 package com.mozilla.curriculum_tracking_system.mapper.tracking;
 
+import com.mozilla.curriculum_tracking_system.dto.tracking.TrackingActionRequest;
 import com.mozilla.curriculum_tracking_system.dto.tracking.TrackingStepDto;
 import com.mozilla.curriculum_tracking_system.dto.tracking.TrackingStepPageResponse;
-import com.mozilla.curriculum_tracking_system.dto.tracking.TrackingActionRequest;
-import com.mozilla.curriculum_tracking_system.model.tracking.TrackingStep;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
+import com.mozilla.curriculum_tracking_system.model.tracking.TrackingStep;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -136,8 +136,7 @@ public class TrackingStepMapper {
         return switch (request.getAction()) {
             case APPROVE -> tracking.getCurrentStage().getNextStage();
             case RETURN -> request.getReturnToStage();
-            case REJECT ->
-                    determineRejectionStage(tracking.getCurrentStage());
+            case REJECT -> determineRejectionStage(tracking.getCurrentStage());
             default -> tracking.getCurrentStage();
         };
     }

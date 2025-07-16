@@ -155,9 +155,9 @@ public interface IS3StorageService {
     /**
      * Validate file before upload
      *
-     * @param file            The file to validate
-     * @param maxSizeBytes    Maximum allowed file size in bytes
-     * @param allowedTypes    List of allowed content types
+     * @param file              The file to validate
+     * @param maxSizeBytes      Maximum allowed file size in bytes
+     * @param allowedTypes      List of allowed content types
      * @param allowedExtensions List of allowed file extensions
      * @return Validation result with any error messages
      */
@@ -220,7 +220,8 @@ public interface IS3StorageService {
             String etag,
             java.time.Instant lastModified,
             Map<String, String> metadata
-    ) {}
+    ) {
+    }
 
     /**
      * Validation result record
@@ -229,5 +230,6 @@ public interface IS3StorageService {
             boolean valid,
             String errorMessage,
             List<String> warnings
-    ) {}
+    ) {
+    }
 }

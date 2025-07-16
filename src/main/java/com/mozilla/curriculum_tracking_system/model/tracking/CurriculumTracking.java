@@ -2,11 +2,11 @@ package com.mozilla.curriculum_tracking_system.model.tracking;
 
 import com.mozilla.curriculum_tracking_system.enums.TrackingStage;
 import com.mozilla.curriculum_tracking_system.enums.TrackingStatus;
-import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
-import com.mozilla.curriculum_tracking_system.model.user.User;
-import com.mozilla.curriculum_tracking_system.model.school.School;
-import com.mozilla.curriculum_tracking_system.model.department.Department;
 import com.mozilla.curriculum_tracking_system.model.academic.AcademicLevel;
+import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
+import com.mozilla.curriculum_tracking_system.model.department.Department;
+import com.mozilla.curriculum_tracking_system.model.school.School;
+import com.mozilla.curriculum_tracking_system.model.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

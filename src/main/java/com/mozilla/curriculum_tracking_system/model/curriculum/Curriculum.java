@@ -1,12 +1,11 @@
 package com.mozilla.curriculum_tracking_system.model.curriculum;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.mozilla.curriculum_tracking_system.model.school.School;
-import com.mozilla.curriculum_tracking_system.model.department.Department;
 import com.mozilla.curriculum_tracking_system.enums.CurriculumStatus;
 import com.mozilla.curriculum_tracking_system.model.academic.AcademicLevel;
 import com.mozilla.curriculum_tracking_system.model.comment.Comment;
-
+import com.mozilla.curriculum_tracking_system.model.department.Department;
+import com.mozilla.curriculum_tracking_system.model.school.School;
 import jakarta.persistence.*;
 import lombok.*;
 

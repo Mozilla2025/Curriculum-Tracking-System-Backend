@@ -42,7 +42,7 @@ public enum TrackingStage {
         return switch (this) {
             case DEAN_COMMITTEE -> new TrackingStage[]{SCHOOL_BOARD};
             case SENATE -> new TrackingStage[]{DEAN_COMMITTEE};
-            case QA_INTERNAL_AUDIT,CUE_EXTERNAL_AUDIT, VICE_CHANCELLOR_APPROVAL -> new TrackingStage[]{SCHOOL_BOARD};
+            case QA_INTERNAL_AUDIT, CUE_EXTERNAL_AUDIT, VICE_CHANCELLOR_APPROVAL -> new TrackingStage[]{SCHOOL_BOARD};
             default -> new TrackingStage[]{};
         };
     }

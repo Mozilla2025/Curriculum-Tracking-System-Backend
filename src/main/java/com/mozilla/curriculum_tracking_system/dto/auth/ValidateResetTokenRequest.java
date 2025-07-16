@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ValidateResetTokenRequest {
-    
+
     @NotBlank(message = "Reset token is required")
     private String token;
 }

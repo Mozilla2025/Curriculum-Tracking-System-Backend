@@ -4,10 +4,10 @@ import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingDet
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingOverviewDto;
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingPageResponse;
 import com.mozilla.curriculum_tracking_system.dto.tracking.InitiateTrackingRequest;
-import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
 import com.mozilla.curriculum_tracking_system.model.academic.AcademicLevel;
 import com.mozilla.curriculum_tracking_system.model.department.Department;
 import com.mozilla.curriculum_tracking_system.model.school.School;
+import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
