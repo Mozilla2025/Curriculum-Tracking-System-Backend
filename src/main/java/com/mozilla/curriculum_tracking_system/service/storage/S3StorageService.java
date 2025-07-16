@@ -30,7 +30,7 @@ public class S3StorageService implements IS3StorageService {
 
     private final S3Client s3Client;
 
-    @Value("${aws.s3.bucket}")
+    @Value("${aws.s3.bucket}:curriculumstorage")
     private String defaultBucket;
 
     @Value("${aws.region}")
