@@ -30,6 +30,8 @@ import java.util.*;
 @Slf4j
 public class DataInitializationService implements CommandLineRunner {
 
+    // Default password for all test users
+    private static final String DEFAULT_TEST_PASSWORD = "TestUser@123";
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final AcademicLevelRepository academicLevelRepository;
@@ -37,18 +39,12 @@ public class DataInitializationService implements CommandLineRunner {
     private final DepartmentRepository departmentRepository;
     private final CurriculumRepository curriculumRepository;
     private final PasswordEncoder passwordEncoder;
-
     @Value("${app.admin.username:admin}")
     private String defaultAdminUsername;
-
     @Value("${app.admin.email:admin@curriculum.system}")
     private String defaultAdminEmail;
-
     @Value("${app.admin.password:Admin@123}")
     private String defaultAdminPassword;
-
-    // Default password for all test users
-    private static final String DEFAULT_TEST_PASSWORD = "TestUser@123";
 
     @Override
     @Transactional

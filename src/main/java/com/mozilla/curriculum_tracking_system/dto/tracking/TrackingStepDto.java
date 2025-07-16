@@ -2,7 +2,6 @@ package com.mozilla.curriculum_tracking_system.dto.tracking;
 
 import com.mozilla.curriculum_tracking_system.enums.TrackingAction;
 import com.mozilla.curriculum_tracking_system.enums.TrackingStage;
-import com.mozilla.curriculum_tracking_system.enums.TrackingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

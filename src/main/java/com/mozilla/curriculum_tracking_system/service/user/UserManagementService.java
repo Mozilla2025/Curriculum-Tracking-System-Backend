@@ -1,9 +1,9 @@
 package com.mozilla.curriculum_tracking_system.service.user;
 
 import com.mozilla.curriculum_tracking_system.constants.RoleConstants;
-import com.mozilla.curriculum_tracking_system.dto.user.CreateUserRequest;
 import com.mozilla.curriculum_tracking_system.dto.email.UserCredentialsEmailData;
 import com.mozilla.curriculum_tracking_system.dto.user.AssignRoleRequest;
+import com.mozilla.curriculum_tracking_system.dto.user.CreateUserRequest;
 import com.mozilla.curriculum_tracking_system.dto.user.UserResponse;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
@@ -13,7 +13,6 @@ import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.roles.RoleRepository;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import com.mozilla.curriculum_tracking_system.service.email.IEmailService;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

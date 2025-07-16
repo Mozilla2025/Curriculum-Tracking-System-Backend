@@ -21,7 +21,6 @@ public class DepartmentMapper {
                 .departments(departmentDtos)
 
 
-
                 .currentPage(departmentPage.getNumber())
                 .totalPages(departmentPage.getTotalPages())
                 .totalElements(departmentPage.getTotalElements())

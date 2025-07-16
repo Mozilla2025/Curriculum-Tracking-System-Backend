@@ -8,6 +8,6 @@ public class RoleConstants {
     public static final String ASSISTANT_ROLE = "ASSISTANT";
 
     private RoleConstants() {
-        
+
     }
 }

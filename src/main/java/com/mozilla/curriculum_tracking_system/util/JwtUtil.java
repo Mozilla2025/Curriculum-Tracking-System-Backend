@@ -44,8 +44,8 @@ public class JwtUtil {
             claims.put("lastName", user.getLastName());
 
             List<String> roleNames = user.getRoles().stream()
-            .map(role -> role.getName())
-            .collect(Collectors.toList());
+                    .map(role -> role.getName())
+                    .collect(Collectors.toList());
             claims.put("roles", roleNames);
 
             claims.put("isAdmin", roleNames.contains("ADMIN"));
@@ -95,7 +95,7 @@ public class JwtUtil {
         return getClaimsFromToken(token, claims -> (String) claims.get("email"));
     }
 
-    
+
     @SuppressWarnings("unchecked")
     public List<String> getRolesFromToken(String token) {
         return getClaimsFromToken(token, claims -> (List<String>) claims.get("roles"));
@@ -191,7 +191,7 @@ public class JwtUtil {
         try {
             List<String> userRoles = getRolesFromToken(token);
             if (userRoles == null) return false;
-            
+
             for (String roleName : roleNames) {
                 if (userRoles.contains(roleName)) {
                     return true;

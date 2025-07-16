@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class SchoolMapper {
 
-    public SchoolDto mapToDto(School school){
+    public SchoolDto mapToDto(School school) {
         return SchoolDto.builder()
                 .name(school.getName())
                 .code(school.getCode())

@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.service.storage;
+package com.mozilla.curriculum_tracking_system.service.tracking;
 
 import com.mozilla.curriculum_tracking_system.dto.tracking.TrackingDocumentDto;
 import com.mozilla.curriculum_tracking_system.enums.DocumentType;
@@ -13,6 +13,7 @@ import com.mozilla.curriculum_tracking_system.repository.tracking.CurriculumTrac
 import com.mozilla.curriculum_tracking_system.repository.tracking.TrackingDocumentRepository;
 import com.mozilla.curriculum_tracking_system.repository.tracking.TrackingStepRepository;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
+import com.mozilla.curriculum_tracking_system.service.storage.S3StorageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -30,47 +31,39 @@ import java.util.stream.Collectors;
 @Transactional
 public class TrackingDocumentStorageService extends S3StorageService implements ITrackingDocumentStorageService {
 
-    private final TrackingDocumentRepository documentRepository;
-    private final CurriculumTrackingRepository trackingRepository;
-    private final TrackingStepRepository stepRepository;
-    private final UserRepository userRepository;
-    private final TrackingDocumentMapper documentMapper;
-
-    @Value("{aws.s3.bucket}")
-    private String trackingDocumentBucket;
-
     // File size limits (in bytes)
     private static final long DEFAULT_MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
     private static final long PROPOSAL_MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
     private static final long AUDIT_MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
-
     // Allowed file types
     private static final List<String> DOCUMENT_CONTENT_TYPES = Arrays.asList(
             "application/pdf", "application/msword",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "text/plain", "application/rtf"
     );
-
     private static final List<String> IMAGE_CONTENT_TYPES = Arrays.asList(
             "image/jpeg", "image/png", "image/gif", "image/bmp"
     );
-
     private static final List<String> SPREADSHEET_CONTENT_TYPES = Arrays.asList(
             "application/vnd.ms-excel",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
-
     private static final List<String> DOCUMENT_EXTENSIONS = Arrays.asList(
             "pdf", "doc", "docx", "txt", "rtf"
     );
-
     private static final List<String> IMAGE_EXTENSIONS = Arrays.asList(
             "jpg", "jpeg", "png", "gif", "bmp"
     );
-
     private static final List<String> SPREADSHEET_EXTENSIONS = Arrays.asList(
             "xls", "xlsx"
     );
+    private final TrackingDocumentRepository documentRepository;
+    private final CurriculumTrackingRepository trackingRepository;
+    private final TrackingStepRepository stepRepository;
+    private final UserRepository userRepository;
+    private final TrackingDocumentMapper documentMapper;
+    @Value("{aws.s3.bucket}")
+    private String trackingDocumentBucket;
 
     public TrackingDocumentStorageService(
             S3Client s3Client,
@@ -300,7 +293,7 @@ public class TrackingDocumentStorageService extends S3StorageService implements 
         List<TrackingDocument> versionsToArchive = versions.subList(versionsToKeep, versions.size());
 
         int archivedCount = 0;
-        for (TrackingDocument document: versionsToArchive) {
+        for (TrackingDocument document : versionsToArchive) {
             document.setIsActive(false);
             documentRepository.save(document);
 

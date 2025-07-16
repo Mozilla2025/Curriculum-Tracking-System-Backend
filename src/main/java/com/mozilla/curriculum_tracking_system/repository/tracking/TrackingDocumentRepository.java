@@ -16,76 +16,78 @@ import java.util.Optional;
 public interface TrackingDocumentRepository extends JpaRepository<TrackingDocument, Long> {
 
     @Query("""
-        SELECT td FROM TrackingDocument td
-        JOIN FETCH td.uploadedBy ub
-        WHERE td.trackingStep.id = :stepId AND td.isActive = true
-        ORDER BY td.uploadedAt DESC
-        """)
+            SELECT td FROM TrackingDocument td
+            JOIN FETCH td.uploadedBy ub
+            WHERE td.trackingStep.id = :stepId AND td.isActive = true
+            ORDER BY td.uploadedAt DESC
+            """)
     List<TrackingDocument> findByTrackingStepIdAndActiveTrue(@Param("stepId") Long stepId);
 
     @Query("""
-        SELECT td FROM TrackingDocument td
-        JOIN FETCH td.uploadedBy ub
-        JOIN FETCH td.trackingStep ts
-        WHERE ts.tracking.id = :trackingId AND td.isActive = true
-        ORDER BY td.uploadedAt DESC
-        """)
+            SELECT td FROM TrackingDocument td
+            JOIN FETCH td.uploadedBy ub
+            JOIN FETCH td.trackingStep ts
+            WHERE ts.tracking.id = :trackingId AND td.isActive = true
+            ORDER BY td.uploadedAt DESC
+            """)
     List<TrackingDocument> findByTrackingIdAndActiveTrue(@Param("trackingId") Long trackingId);
 
     @Query("""
-        SELECT td FROM TrackingDocument td
-        WHERE td.documentName = :documentName 
-        AND td.trackingStep.id = :stepId 
-        AND td.isActive = true
-        ORDER BY td.versionNumber DESC
-        """)
+            SELECT td FROM TrackingDocument td
+            WHERE td.documentName = :documentName 
+            AND td.trackingStep.id = :stepId 
+            AND td.isActive = true
+            ORDER BY td.versionNumber DESC
+            """)
     List<TrackingDocument> findVersionsByDocumentNameAndStepId(@Param("documentName") String documentName,
                                                                @Param("stepId") Long stepId);
 
     @Query("""
-        SELECT td FROM TrackingDocument td
-        WHERE td.documentName = :documentName 
-        AND td.trackingStep.id = :stepId 
-        AND td.isActive = true
-        ORDER BY td.versionNumber DESC
-        LIMIT 1
-        """)
+            SELECT td FROM TrackingDocument td
+            WHERE td.documentName = :documentName 
+            AND td.trackingStep.id = :stepId 
+            AND td.isActive = true
+            ORDER BY td.versionNumber DESC
+            LIMIT 1
+            """)
     Optional<TrackingDocument> findLatestVersionByDocumentNameAndStepId(@Param("documentName") String documentName,
                                                                         @Param("stepId") Long stepId);
 
     @Query("""
-        SELECT td FROM TrackingDocument td
-        JOIN FETCH td.uploadedBy ub
-        WHERE td.documentType = :type AND td.isActive = true
-        ORDER BY td.uploadedAt DESC
-        """)
+            SELECT td FROM TrackingDocument td
+            JOIN FETCH td.uploadedBy ub
+            WHERE td.documentType = :type AND td.isActive = true
+            ORDER BY td.uploadedAt DESC
+            """)
     List<TrackingDocument> findByDocumentTypeAndActiveTrue(@Param("type") DocumentType type);
 
     @Query("""
-        SELECT td FROM TrackingDocument td
-        JOIN FETCH td.trackingStep ts
-        JOIN FETCH ts.tracking t
-        WHERE td.uploadedBy.id = :userId AND td.isActive = true
-        ORDER BY td.uploadedAt DESC
-        """)
+            SELECT td FROM TrackingDocument td
+            JOIN FETCH td.trackingStep ts
+            JOIN FETCH ts.tracking t
+            WHERE td.uploadedBy.id = :userId AND td.isActive = true
+            ORDER BY td.uploadedAt DESC
+            """)
     List<TrackingDocument> findByUploadedByIdAndActiveTrue(@Param("userId") Long userId);
 
     List<TrackingDocument> findByUploadedAtBetweenAndIsActiveTrue(LocalDateTime startDate, LocalDateTime endDate);
 
     boolean existsByFilePathAndIsActiveTrue(String filePath);
+
     Optional<TrackingDocument> findByFilePathAndIsActiveTrue(String filePath);
 
     long countByDocumentTypeAndIsActiveTrue(DocumentType type);
+
     long countByUploadedAtBetweenAndIsActiveTrue(LocalDateTime startDate, LocalDateTime endDate);
 
     @Query("SELECT SUM(td.fileSize) FROM TrackingDocument td WHERE td.isActive = true")
     Long getTotalStorageUsed();
 
     @Query("""
-        SELECT td.documentType, COUNT(td), SUM(td.fileSize)
-        FROM TrackingDocument td
-        WHERE td.isActive = true
-        GROUP BY td.documentType
-        """)
+            SELECT td.documentType, COUNT(td), SUM(td.fileSize)
+            FROM TrackingDocument td
+            WHERE td.isActive = true
+            GROUP BY td.documentType
+            """)
     List<Object[]> getStorageStatsByDocumentType();
 }

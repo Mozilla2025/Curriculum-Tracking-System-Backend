@@ -1,15 +1,14 @@
 package com.mozilla.curriculum_tracking_system.model.school;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import com.mozilla.curriculum_tracking_system.model.department.Department;
-
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor

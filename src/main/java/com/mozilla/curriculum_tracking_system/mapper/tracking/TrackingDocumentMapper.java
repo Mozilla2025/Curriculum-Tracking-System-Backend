@@ -1,10 +1,10 @@
 package com.mozilla.curriculum_tracking_system.mapper.tracking;
 
 import com.mozilla.curriculum_tracking_system.dto.tracking.TrackingDocumentDto;
+import com.mozilla.curriculum_tracking_system.enums.DocumentType;
 import com.mozilla.curriculum_tracking_system.model.tracking.TrackingDocument;
 import com.mozilla.curriculum_tracking_system.model.tracking.TrackingStep;
 import com.mozilla.curriculum_tracking_system.model.user.User;
-import com.mozilla.curriculum_tracking_system.enums.DocumentType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 

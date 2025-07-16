@@ -1,15 +1,14 @@
 package com.mozilla.curriculum_tracking_system.mapper.user;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Component;
-
 import com.mozilla.curriculum_tracking_system.dto.user.CreateUserRequest;
 import com.mozilla.curriculum_tracking_system.dto.user.UserResponse;
 import com.mozilla.curriculum_tracking_system.model.roles.Role;
 import com.mozilla.curriculum_tracking_system.model.user.User;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class UserMapper {
@@ -29,8 +28,9 @@ public class UserMapper {
                 .build();
     }
 
-     /**
+    /**
      * Maps User entity to UserResponse DTO
+     *
      * @param user the user entity
      * @return UserResponse DTO
      */
@@ -51,6 +51,7 @@ public class UserMapper {
 
     /**
      * Maps list of User entities to list of UserResponse DTOs
+     *
      * @param users list of user entities
      * @return list of UserResponse DTOs
      */
@@ -59,9 +60,10 @@ public class UserMapper {
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * Maps Set of Roles to Set of role names
+     *
      * @param roles set of role entities
      * @return set of role names
      */

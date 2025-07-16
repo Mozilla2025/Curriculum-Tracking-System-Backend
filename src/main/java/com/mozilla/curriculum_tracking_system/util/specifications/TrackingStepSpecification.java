@@ -220,7 +220,7 @@ public class TrackingStepSpecification {
      * Specification to find steps within a date range
      *
      * @param startDate The start date (inclusive)
-     * @param endDate The end date (inclusive)
+     * @param endDate   The end date (inclusive)
      * @return Specification for steps performed within the date range
      */
     public static Specification<TrackingStep> byDateRange(java.time.LocalDateTime startDate,
