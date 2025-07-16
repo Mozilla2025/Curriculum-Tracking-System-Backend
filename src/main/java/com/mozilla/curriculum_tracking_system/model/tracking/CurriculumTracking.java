@@ -110,25 +110,13 @@ public class CurriculumTracking {
     private List<TrackingStep> trackingSteps = new ArrayList<>();
 
     @PrePersist
-    private void generateTrackingId() {
-        if (this.trackingId == null) {
-            this.trackingId = generateUniqueTrackingId();
-        }
+    private void setDefaults() {
         if (this.currentStage == null) {
             this.currentStage = TrackingStage.IDEATION;
         }
         if (this.status == null) {
             this.status = TrackingStatus.INITIATED;
         }
-    }
-
-    private String generateUniqueTrackingId() {
-        String departmentCode = (department != null && department.getCode() != null) ?
-                department.getCode().replaceAll("[^A-Z0-9]", "") : "DEPT";
-        String schoolCode = (school != null && school.getCode() != null) ?
-                school.getCode().replaceAll("[^A-Z0-9]", "") : "SCH";
-        String timestamp = String.valueOf(System.currentTimeMillis()).substring(8);
-        return "TRK-" + schoolCode + "-" + departmentCode + "-" + timestamp;
     }
 
     public void moveToNextStage() {
@@ -163,5 +151,9 @@ public class CurriculumTracking {
 
     public String getCurriculumDisplayCode() {
         return curriculum != null ? curriculum.getCode() : proposedCurriculumCode;
+    }
+
+    public void setGeneratedTrackingId(String trackingId) {
+        this.trackingId = trackingId;
     }
 }

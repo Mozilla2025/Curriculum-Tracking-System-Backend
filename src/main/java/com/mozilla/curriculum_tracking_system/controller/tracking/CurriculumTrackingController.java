@@ -388,11 +388,11 @@ public class CurriculumTrackingController {
     /**
      * Update tracking information
      */
-    @PutMapping("/{trackingId}")
+    @PutMapping(value = "/{trackingId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('QA', 'DEAN')")
     public ResponseEntity<ApiResponse> updateTracking(
             @PathVariable Long trackingId,
-            @Valid @RequestBody InitiateTrackingRequest request,
+            @Valid @ModelAttribute InitiateTrackingRequest request,
             @RequestHeader("Authorization") String authorizationHeader) {
 
         log.info("Updating tracking: {}", trackingId);

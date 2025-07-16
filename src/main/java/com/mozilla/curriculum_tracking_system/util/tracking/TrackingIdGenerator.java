@@ -3,7 +3,7 @@ package com.mozilla.curriculum_tracking_system.util.tracking;
 import org.springframework.stereotype.Component;
 
 /**
- * utility for generating unique tracking IDs
+ * Utility for generating unique tracking IDs
  */
 @Component
 public class TrackingIdGenerator {
@@ -39,6 +39,19 @@ public class TrackingIdGenerator {
         builder.append(SEPARATOR).append(timestamp);
 
         return builder.toString();
+    }
+
+    /**
+     * Generate tracking ID for ideation stage (when curriculum doesn't exist yet)
+     */
+    public String generateIdeationTrackingId(String proposedCurriculumCode, String departmentCode, String schoolCode) {
+        String cleanCurriculumCode = cleanCode(proposedCurriculumCode, "IDEA");
+        String cleanDepartmentCode = cleanCode(departmentCode, "DEPT");
+        String cleanSchoolCode = cleanCode(schoolCode, "SCH");
+        String timestamp = String.valueOf(System.currentTimeMillis()).substring(8);
+
+        return PREFIX + SEPARATOR + cleanSchoolCode + SEPARATOR +
+                cleanDepartmentCode + SEPARATOR + cleanCurriculumCode + SEPARATOR + timestamp;
     }
 
     private String cleanCode(String code, String fallback) {
