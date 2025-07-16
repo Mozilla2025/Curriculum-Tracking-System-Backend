@@ -49,16 +49,16 @@ public class DataInitializationService implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-//        log.info("Starting system data initialization...");
-//
-//        initializeRoles();
-//        initializeDefaultAdmin();
-//        initializeAcademicLevels();
-//        initializeSchoolsAndDepartments();
-//        initializeRoleBasedUsers();
-//        initializeCurriculums();
-//
-//        log.info("System data initialization completed successfully!");
+        log.info("Starting system data initialization...");
+
+        initializeRoles();
+        initializeDefaultAdmin();
+        initializeAcademicLevels();
+        initializeSchoolsAndDepartments();
+        initializeRoleBasedUsers();
+        initializeCurriculums();
+
+        log.info("System data initialization completed successfully!");
     }
 
     private void initializeRoles() {
