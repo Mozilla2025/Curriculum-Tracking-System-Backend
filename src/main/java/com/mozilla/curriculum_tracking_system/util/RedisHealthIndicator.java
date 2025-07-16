@@ -2,13 +2,11 @@ package com.mozilla.curriculum_tracking_system.util;
 
 
 import java.util.Properties;
-
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.stereotype.Component;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,15 +20,12 @@ public class RedisHealthIndicator implements HealthIndicator {
     @Override
     public Health health() {
         try {
-            RedisConnection connection = redisConnectionFactory.getConnection();
-            try {
+            try (RedisConnection connection = redisConnectionFactory.getConnection()) {
                 connection.ping();
                 return Health.up()
                         .withDetail("redis", "Available")
                         .withDetail("version", getRedisVersion(connection))
                         .build();
-            } finally {
-                connection.close();
             }
         } catch (Exception e) {
             log.error("Redis health check failed", e);
