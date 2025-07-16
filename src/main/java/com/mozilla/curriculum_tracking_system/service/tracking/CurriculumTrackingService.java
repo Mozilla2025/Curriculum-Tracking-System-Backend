@@ -28,6 +28,7 @@ import com.mozilla.curriculum_tracking_system.repository.tracking.TrackingStepRe
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
 import com.mozilla.curriculum_tracking_system.util.specifications.TrackingSpecification;
+import com.mozilla.curriculum_tracking_system.util.tracking.TrackingIdGenerator;
 import com.mozilla.curriculum_tracking_system.util.tracking.TrackingValidationHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +66,7 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
     private final IAuthenticationService authenticationService;
     private final TrackingValidationHelper validationHelper;
     private final ITrackingDocumentStorageService documentStorageService;
+    private final TrackingIdGenerator trackingIdGenerator;
 
     @Override
     public CurriculumTrackingDetailDto initiateTracking(InitiateTrackingRequest request, String authToken) {
@@ -106,6 +108,9 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         if (linkedCurriculum != null) {
             tracking.linkCurriculum(linkedCurriculum);
         }
+
+        String generateTrackingId = generateTrackingId(request, school, department, linkedCurriculum);
+        tracking.setGeneratedTrackingId(generateTrackingId);
 
         // Save tracking
         CurriculumTracking savedTracking = trackingRepository.save(tracking);
@@ -643,4 +648,25 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
             throw new ResourceNotFoundException("Department not found with ID: " + departmentId);
         }
     }
+
+    /**
+     * Generate tracking ID based on the type of tracking (ideation vs existing curriculum)
+     */
+    private String generateTrackingId(InitiateTrackingRequest request, School school, Department department, Curriculum linkedCurriculum) {
+        if (linkedCurriculum != null) {
+            // For exiting curriculum
+            return trackingIdGenerator.generateTrackingId(
+                    linkedCurriculum.getCode(),
+                    department.getCode()
+            );
+        } else {
+            // Ideation stage
+            return trackingIdGenerator.generateIdeationTrackingId(
+                    request.getProposedCurriculumCode(),
+                    department.getCode(),
+                    school.getCode()
+            );
+        }
+    }
+
 }
