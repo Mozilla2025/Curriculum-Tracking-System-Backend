@@ -51,12 +51,12 @@ public class DataInitializationService implements CommandLineRunner {
     public void run(String... args) {
         log.info("Starting system data initialization...");
 
-        initializeRoles();
-        initializeDefaultAdmin();
-        initializeAcademicLevels();
-        initializeSchoolsAndDepartments();
-        initializeRoleBasedUsers();
-        initializeCurriculums();
+//        initializeRoles();
+//        initializeDefaultAdmin();
+//        initializeAcademicLevels();
+//        initializeSchoolsAndDepartments();
+//        initializeRoleBasedUsers();
+//        initializeCurriculums();
 
         log.info("System data initialization completed successfully!");
     }
