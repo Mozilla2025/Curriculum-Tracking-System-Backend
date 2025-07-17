@@ -97,6 +97,10 @@ public class SecurityConfig {
                                 "/api/v1/tracking/curriculums/stage/CUE_EXTERNAL_REVIEW/**"
                         ).hasRole("QA")
 
+                        .requestMatchers(
+                                "/api/v1/ws/**"
+                        ).permitAll()
+
                         .requestMatchers("/api/v1/tracking/**").authenticated()
 
 

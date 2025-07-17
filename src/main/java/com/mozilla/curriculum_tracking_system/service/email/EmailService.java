@@ -3,6 +3,7 @@ package com.mozilla.curriculum_tracking_system.service.email;
 import com.mozilla.curriculum_tracking_system.dto.email.EmailRequest;
 import com.mozilla.curriculum_tracking_system.dto.email.UserCredentialsEmailData;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
+import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,6 +33,9 @@ public class EmailService implements IEmailService {
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
+
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
+    private static final DateTimeFormatter DATETIME_FORMAT = DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a");
 
     @Override
     public void sendEmail(EmailRequest emailRequest) {

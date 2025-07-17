@@ -14,4 +14,7 @@ public interface IEmailService {
 
     void sendPasswordResetSuccessEmail(String email, String username);
 
+    //Notification-related methods
+
+    void sendCurriculumDueForReviewNorification(String recipientEmail, String recipientUser);
 }
