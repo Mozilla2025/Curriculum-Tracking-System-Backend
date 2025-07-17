@@ -1,256 +1,261 @@
 package com.mozilla.curriculum_tracking_system.service.notification;
 
-import com.mozilla.curriculum_tracking_system.dto.email.EmailRequest;
+import com.mozilla.curriculum_tracking_system.dto.notification.NotificationDto;
+import com.mozilla.curriculum_tracking_system.enums.NotificationPriority;
+import com.mozilla.curriculum_tracking_system.enums.NotificationType;
+import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
+import com.mozilla.curriculum_tracking_system.model.notification.Notification;
+import com.mozilla.curriculum_tracking_system.repository.NotificationRepository;
 import com.mozilla.curriculum_tracking_system.service.email.IEmailService;
-import com.mozilla.curriculum_tracking_system.service.notification.INotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
-public class NotificationService {
+public class NotificationService implements INotificationService {
 
+    private final NotificationRepository notificationRepository;
     private final IEmailService emailService;
-    private final INotificationService notificationService; // For in-app notifications
 
-    @Value("${app.frontend.url}")
-    private String frontendUrl;
+    @Override
+    @Transactional
+    public NotificationDto createNotification(NotificationDto notificationDto) {
 
-    @Value("${spring.mail.username}")
-    private String supportEmail;
+        Notification notification = Notification.builder()
+                .title(notificationDto.getTitle())
+                .message(notificationDto.getMessage())
+                .type(notificationDto.getType())
+                .priority(notificationDto.getPriority())
+                .recipientEmail(notificationDto.getRecipientEmail())
+                .recipientName(notificationDto.getRecipientName())
+                .scheduledFor(notificationDto.getScheduledFor() != null ?
+                        notificationDto.getScheduledFor() : LocalDateTime.now())
+                .build();
 
-    @Value("${app.email.from-name:Mozilla Foundation}")
-    private String companyName;
+        notification = notificationRepository.save(notification);
 
-    /**
-     * Send curriculum review due notification to Dean
-     */
-    public void sendCurriculumReviewDueNotification(String deanEmail, String deanName,
-                                                    String curriculumName, String curriculumCode,
-                                                    int yearsElapsed, Long curriculumId) {
-        try {
-            Map<String, Object> variables = createBaseVariables();
-            variables.put("curriculumName", curriculumName);
-            variables.put("curriculumCode", curriculumCode);
-            variables.put("yearsElapsed", yearsElapsed);
-            variables.put("deanName", deanName != null ? deanName : "Dean");
-            variables.put("loginUrl", frontendUrl + "/curricula/" + curriculumId);
+        // Send email if scheduled for now or past
+        if (notification.getScheduledFor().isBefore(LocalDateTime.now()) ||
+                notification.getScheduledFor().isEqual(LocalDateTime.now())) {
+            sendNotificationEmail(notification);
+        }
 
-            EmailRequest emailRequest = EmailRequest.builder()
-                    .to(deanEmail)
-                    .subject("📚 Curriculum Review Due: " + curriculumName)
-                    .templateName("curriculum-review-due")
-                    .variables(variables)
-                    .isHtml(true)
-                    .build();
+        return convertToDto(notification);
+    }
 
-            emailService.sendEmail(emailRequest);
+    @Override
+    @Transactional
+    public NotificationDto createCurriculumDueNotification(Curriculum curriculum,
+                                                           Long recipientId, String recipientEmail, String recipientName) {
 
-            // In-app notification
-            String message = String.format("Curriculum '%s' (%s) is due for review after %d years",
-                    curriculumName, curriculumCode, yearsElapsed);
-            notificationService.createNotification(deanEmail, "CURRICULUM_REVIEW_DUE", message, curriculumId);
+        NotificationDto notificationDto = NotificationDto.builder()
+                .title("Curriculum Review Due")
+                .message("The curriculum '" + curriculum.getName() +
+                        "' is due for review. Please begin the review process.")
+                .type(NotificationType.CURRICULUM_DUE_FOR_REVIEW)
+                .priority(NotificationPriority.HIGH)
+                .recipientEmail(recipientEmail)
+                .recipientName(recipientName)
+                .build();
 
-            log.info("Review due notification sent for curriculum: {}", curriculumCode);
-        } catch (Exception e) {
-            log.error("Failed to send curriculum review due notification for: {}", curriculumCode, e);
+        return createNotification(notificationDto);
+    }
+
+    @Override
+    @Transactional
+    public NotificationDto createReminderNotification(Curriculum curriculum, String recipientEmail, String recipientName) {
+        long daysUntilDue = java.time.temporal.ChronoUnit.DAYS.between(
+                LocalDateTime.now().toLocalDate(),
+                curriculum.getExpiryDate().toLocalDate()
+        );
+
+        NotificationDto notificationDto = NotificationDto.builder()
+                .title("Curriculum Review Reminder")
+                .message("Reminder: The curriculum '" + curriculum.getName() +
+                        "' is due for review in " + daysUntilDue + " days.")
+                .type(NotificationType.REMINDER)
+                .priority(daysUntilDue <= 7 ? NotificationPriority.HIGH :
+                        NotificationPriority.MEDIUM)
+                .curriculumId(curriculum.getId())
+                .curriculumName(curriculum.getName())
+                .recipientEmail(recipientEmail)
+                .recipientName(recipientName)
+                .build();
+
+        return createNotification(notificationDto);
+    }
+
+    @Override
+    @Transactional
+    public NotificationDto createOverdueNotification(Curriculum curriculum,
+                                                     String recipientEmail, String recipientName) {
+        NotificationDto notificationDto = NotificationDto.builder()
+                .title("OVERDUE: Curriculum Review")
+                .message("The curriculum '" + curriculum.getName() +
+                        "' is overdue for review by " + curriculum.getDaysOverdue() + " days.")
+                .type(NotificationType.REVIEW_OVERDUE)
+                .priority(NotificationPriority.URGENT)
+                .curriculumId(curriculum.getId())
+                .curriculumName(curriculum.getName())
+                .recipientEmail(recipientEmail)
+                .recipientName(recipientName)
+                .build();
+
+        return createNotification(notificationDto);
+    }
+
+    @Override
+    @Transactional
+    public NotificationDto createStatusUpdateNotification(Curriculum curriculum,
+                                                          String recipientEmail, String recipientName,
+                                                          String statusUpdate) {
+        NotificationDto notificationDto = NotificationDto.builder()
+                .title("Curriculum Status Update")
+                .message("Status update for '" + curriculum.getName() + "': " + statusUpdate)
+                .type(NotificationType.REVIEW_SUBMITTED)
+                .priority(NotificationPriority.MEDIUM)
+                .recipientEmail(recipientEmail)
+                .recipientName(recipientName)
+                .build();
+
+        return createNotification(notificationDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<NotificationDto> getUserNotifications(Long userId, Pageable pageable) {
+        Page<Notification> notifications = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(userId, pageable);
+        return notifications.map(this::convertToDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<NotificationDto> getUnreadNotifications(Long userId, Pageable pageable) {
+        Page<Notification> notifications = notificationRepository.findByRecipientIdAndIsReadFalseOrderByCreatedAtDesc(userId, pageable);
+        return notifications.map(this::convertToDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long getUnreadNotificationCount(Long userId) {
+        return notificationRepository.countByRecipientIdAndIsReadFalse(userId);
+    }
+
+    @Override
+    @Transactional
+    public void markAsRead(Long notificationId) {
+        Optional<Notification> notificationOpt = notificationRepository.findById(notificationId);
+        if (notificationOpt.isPresent()) {
+            Notification notification = notificationOpt.get();
+            notification.markAsRead();
+            notificationRepository.save(notification);
         }
     }
 
-    /**
-     * Send curriculum status update notification
-     */
-    public void sendCurriculumStatusUpdateNotification(String recipientEmail, String curriculumName,
-                                                       String curriculumCode, String currentStage,
-                                                       String nextStage, String comments, Long curriculumId) {
-        try {
-            Map<String, Object> variables = createBaseVariables();
-            variables.put("curriculumName", curriculumName);
-            variables.put("curriculumCode", curriculumCode);
-            variables.put("currentStage", currentStage);
-            variables.put("nextStage", nextStage);
-            variables.put("comments", comments);
-            variables.put("loginUrl", frontendUrl + "/curricula/" + curriculumId);
+    @Override
+    @Transactional
+    public void markMultipleAsRead(List<Long> notificationIds) {
+        notificationRepository.markAsRead(notificationIds, LocalDateTime.now());
+    }
 
-            EmailRequest emailRequest = EmailRequest.builder()
-                    .to(recipientEmail)
-                    .subject("📋 Curriculum Status Update: " + curriculumName)
-                    .templateName("curriculum-status-update")
-                    .variables(variables)
-                    .isHtml(true)
-                    .build();
+    @Override
+    @Transactional
+    public void markAllAsRead(Long userId) {
+        List<Notification> unreadNotifications = notificationRepository
+                .findByRecipientIdAndIsReadFalse(null, null)
+                .stream()
+                .filter(n -> n.getRecipientId().equals(userId))
+                .toList();
 
-            emailService.sendEmail(emailRequest);
+        List<Long> notificationIds = unreadNotifications.stream()
+                .map(Notification::getId)
+                .toList();
 
-            // In-app notification
-            String message = String.format("Curriculum '%s' has moved to %s stage",
-                    curriculumName, nextStage);
-            notificationService.createNotification(recipientEmail, "CURRICULUM_STATUS_UPDATE", message, curriculumId);
-
-            log.info("Status update notification sent for curriculum: {}", curriculumCode);
-        } catch (Exception e) {
-            log.error("Failed to send curriculum status update notification for: {}", curriculumCode, e);
+        if (!notificationIds.isEmpty()) {
+            markMultipleAsRead(notificationIds);
         }
     }
 
-    /**
-     * Send action required notification
-     */
-    public void sendActionRequiredNotification(String recipientEmail, String curriculumName,
-                                               String curriculumCode, String actionRequired,
-                                               String stage, Long curriculumId) {
-        try {
-            Map<String, Object> variables = createBaseVariables();
-            variables.put("curriculumName", curriculumName);
-            variables.put("curriculumCode", curriculumCode);
-            variables.put("actionRequired", actionRequired);
-            variables.put("stage", stage);
-            variables.put("loginUrl", frontendUrl + "/curricula/" + curriculumId);
-
-            EmailRequest emailRequest = EmailRequest.builder()
-                    .to(recipientEmail)
-                    .subject("⚠️ Action Required: " + curriculumName)
-                    .templateName("action-required")
-                    .variables(variables)
-                    .isHtml(true)
-                    .build();
-
-            emailService.sendEmail(emailRequest);
-
-            // In-app notification
-            String message = String.format("Action required for curriculum '%s' at %s stage",
-                    curriculumName, stage);
-            notificationService.createNotification(recipientEmail, "ACTION_REQUIRED", message, curriculumId);
-
-            log.info("Action required notification sent for curriculum: {}", curriculumCode);
-        } catch (Exception e) {
-            log.error("Failed to send action required notification for: {}", curriculumCode, e);
-        }
+    @Override
+    @Transactional
+    public void deleteNotification(Long notificationId) {
+        notificationRepository.deleteById(notificationId);
     }
 
-    /**
-     * Send reminder notification for delayed curricula
-     */
-    public void sendDelayReminderNotification(String recipientEmail, String curriculumName,
-                                              String curriculumCode, String stage, int daysDelayed,
-                                              Long curriculumId) {
-        try {
-            Map<String, Object> variables = createBaseVariables();
-            variables.put("curriculumName", curriculumName);
-            variables.put("curriculumCode", curriculumCode);
-            variables.put("stage", stage);
-            variables.put("daysDelayed", daysDelayed);
-            variables.put("loginUrl", frontendUrl + "/curricula/" + curriculumId);
+    @Override
+    @Transactional
+    public void processScheduledNotifications() {
+        List<Notification> scheduledNotifications = notificationRepository
+                .findNotificationsToSendEmail(LocalDateTime.now());
 
-            EmailRequest emailRequest = EmailRequest.builder()
-                    .to(recipientEmail)
-                    .subject("⏰ Reminder: Curriculum Review Delayed - " + curriculumName)
-                    .templateName("delay-reminder")
-                    .variables(variables)
-                    .isHtml(true)
-                    .build();
-
-            emailService.sendEmail(emailRequest);
-
-            // In-app notification
-            String message = String.format("Curriculum '%s' has been delayed %d days at %s stage",
-                    curriculumName, daysDelayed, stage);
-            notificationService.createNotification(recipientEmail, "DELAY_REMINDER", message, curriculumId);
-
-            log.info("Delay reminder notification sent for curriculum: {}", curriculumCode);
-        } catch (Exception e) {
-            log.error("Failed to send delay reminder notification for: {}", curriculumCode, e);
-        }
-    }
-
-    /**
-     * Send CUE reminder notification to Vice Chancellor
-     */
-    public void sendCUEReminderToVC(String vcEmail, String curriculumName, String curriculumCode,
-                                    LocalDate dateSentToCUE, int daysPending, Long curriculumId) {
-        try {
-            Map<String, Object> variables = createBaseVariables();
-            variables.put("curriculumName", curriculumName);
-            variables.put("curriculumCode", curriculumCode);
-            variables.put("dateSentToCUE", dateSentToCUE.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy")));
-            variables.put("daysPending", daysPending);
-            variables.put("loginUrl", frontendUrl + "/curricula/" + curriculumId);
-
-            EmailRequest emailRequest = EmailRequest.builder()
-                    .to(vcEmail)
-                    .subject("🔔 CUE Review Reminder: " + curriculumName)
-                    .templateName("cue-reminder-to-vc")
-                    .variables(variables)
-                    .isHtml(true)
-                    .build();
-
-            emailService.sendEmail(emailRequest);
-
-            // In-app notification
-            String message = String.format("CUE review for curriculum '%s' has been pending for %d days",
-                    curriculumName, daysPending);
-            notificationService.createNotification(vcEmail, "CUE_REMINDER", message, curriculumId);
-
-            log.info("CUE reminder notification sent to VC for curriculum: {}", curriculumCode);
-        } catch (Exception e) {
-            log.error("Failed to send CUE reminder notification for: {}", curriculumCode, e);
-        }
-    }
-
-    /**
-     * Send bulk notifications to multiple recipients
-     */
-    public void sendBulkCurriculumNotifications(List<String> recipients, String subject,
-                                                String templateName, Map<String, Object> variables) {
-        try {
-            // Add base variables
-            Map<String, Object> allVariables = createBaseVariables();
-            if (variables != null) {
-                allVariables.putAll(variables);
+        for (Notification notification : scheduledNotifications) {
+            try {
+                sendNotificationEmail(notification);
+                notification.markEmailAsSent();
+                notificationRepository.save(notification);
+            } catch (Exception e) {
+                log.error("Failed to send scheduled notification email for notification ID: {}",
+                        notification.getId(), e);
             }
-
-            // Send to each recipient individually for better tracking
-            for (String recipient : recipients) {
-                EmailRequest emailRequest = EmailRequest.builder()
-                        .to(recipient)
-                        .subject(subject)
-                        .templateName(templateName)
-                        .variables(allVariables)
-                        .isHtml(true)
-                        .build();
-
-                emailService.sendEmail(emailRequest);
-
-                // Create in-app notification
-                String message = allVariables.get("message") != null ?
-                        allVariables.get("message").toString() : subject;
-                notificationService.createNotification(recipient, "BULK_NOTIFICATION", message, null);
-            }
-
-            log.info("Bulk curriculum notifications sent to {} recipients", recipients.size());
-        } catch (Exception e) {
-            log.error("Failed to send bulk curriculum notifications", e);
         }
     }
 
-    /**
-     * Create base variables that are common to all email templates
-     */
-    private Map<String, Object> createBaseVariables() {
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("loginUrl", frontendUrl + "/login");
-        variables.put("supportEmail", supportEmail);
-        variables.put("companyName", companyName);
-        variables.put("currentYear", java.time.Year.now().getValue());
-        return variables;
+    @Override
+    @Transactional
+    public void cleanupOldNotifications(int daysOld) {
+        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(daysOld);
+        notificationRepository.deleteOldReadNotifications(cutoffDate);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<NotificationDto> getNotificationsByCurriculum(Long curriculumId) {
+        List<Notification> notifications = notificationRepository.findByCurriculumIdOrderByCreatedAtDesc(curriculumId);
+        return notifications.stream().map(this::convertToDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<NotificationDto> getHighPriorityNotifications(Long userId) {
+        List<Notification> notifications = notificationRepository
+                .findHighPriorityNotifications(userId, NotificationPriority.HIGH);
+        return notifications.stream().map(this::convertToDto).toList();
+    }
+
+    private void sendNotificationEmail(Notification notification) {
+        try {
+            NotificationDto notificationDto = convertToDto(notification);
+            emailService.sendNotificationEmail(notificationDto);
+            log.info("Notification email sent successfully for notification ID: {}", notification.getId());
+        } catch (Exception e) {
+            log.error("Failed to send notification email for notification ID: {}",
+                    notification.getId(), e);
+        }
+    }
+
+    private NotificationDto convertToDto(Notification notification) {
+        return NotificationDto.builder()
+                .id(notification.getId())
+                .title(notification.getTitle())
+                .message(notification.getMessage())
+                .type(notification.getType())
+                .priority(notification.getPriority())
+                .recipientEmail(notification.getRecipientEmail())
+                .recipientName(notification.getRecipientName())
+                .isRead(notification.getIsRead())
+                .isEmailSent(notification.getIsEmailSent())
+                .createdAt(notification.getCreatedAt())
+                .readAt(notification.getReadAt())
+                .scheduledFor(notification.getScheduledFor())
+                .build();
     }
 }
