@@ -2,6 +2,8 @@ package com.mozilla.curriculum_tracking_system.model.notification;
 
 import com.mozilla.curriculum_tracking_system.enums.NotificationPriority;
 import com.mozilla.curriculum_tracking_system.enums.NotificationType;
+import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
+import com.mozilla.curriculum_tracking_system.model.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -33,11 +35,15 @@ public class Notification {
     @Column(nullable = false)
     private NotificationPriority priority;
 
-    @Column(name = "recipient_email", nullable = false)
-    private String recipientEmail;
+    @Column(name = "recipient_id")
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
 
-    @Column(name = "recipient_name", nullable = false)
-    private String recipientName;
+    @Column(name = "curriculum_id")
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "curriculum_id", unique = true)
+    private Curriculum curriculum;
 
     @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;

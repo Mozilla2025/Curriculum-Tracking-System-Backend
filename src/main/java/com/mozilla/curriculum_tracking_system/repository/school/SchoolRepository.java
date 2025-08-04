@@ -9,4 +9,6 @@ public interface SchoolRepository extends JpaRepository<School, Long> {
     boolean existsByName(String name);
 
     boolean existsByCode(String code);
+
+    Long findDeanIdBySchoolId(Long schoolId);
 }

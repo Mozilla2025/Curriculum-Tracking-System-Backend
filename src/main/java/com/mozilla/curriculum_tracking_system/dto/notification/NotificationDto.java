@@ -3,6 +3,7 @@ package com.mozilla.curriculum_tracking_system.dto.notification;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.mozilla.curriculum_tracking_system.enums.NotificationPriority;
 import com.mozilla.curriculum_tracking_system.enums.NotificationType;
+import com.mozilla.curriculum_tracking_system.model.user.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,8 +22,11 @@ public class NotificationDto {
     private String message;
     private NotificationType type;
     private NotificationPriority priority;
-    private String recipientEmail;
-    private String recipientName;
+    private Long userId;
+    private String email;
+    private String username;
+    private String curriculumId;
+    private String curriculumName;
     private boolean isRead;
     private boolean isEmailSent;
 

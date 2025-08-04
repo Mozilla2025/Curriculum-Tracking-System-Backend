@@ -11,6 +11,7 @@ import com.mozilla.curriculum_tracking_system.exception.UnauthorizedException;
 import com.mozilla.curriculum_tracking_system.mapper.DepartmentMapper;
 import com.mozilla.curriculum_tracking_system.model.department.Department;
 import com.mozilla.curriculum_tracking_system.model.school.School;
+import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.department.DepartmentRepository;
 import com.mozilla.curriculum_tracking_system.repository.school.SchoolRepository;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
@@ -25,6 +26,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor

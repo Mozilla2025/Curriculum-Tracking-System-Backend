@@ -61,6 +61,10 @@ public class Curriculum {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    //4 or 5 years
+    @Column(name = "review_cycle", nullable = false)
+    private int reviewCycleYears;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "school_id", nullable = false)
     private School school;
@@ -101,5 +105,9 @@ public class Curriculum {
 
     public void putUnderReview() {
         this.status = CurriculumTrackingStatus.UNDER_REVIEW;
+    }
+
+    public void putDueForReview() {
+        this.status = CurriculumTrackingStatus.REVIEW_DUE;
     }
 }

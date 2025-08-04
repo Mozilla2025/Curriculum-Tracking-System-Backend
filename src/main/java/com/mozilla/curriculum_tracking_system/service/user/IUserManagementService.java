@@ -60,6 +60,13 @@ public interface IUserManagementService {
     List<UserResponse> getUsersByRole(String roleName);
 
     /**
+     * Retrieves the dean's email by schoolId
+     * @param schoolId
+     * @return a String containing the dean's email
+     */
+    public String getDeanEmailBySchool(Long schoolId);
+
+    /**
      * Updates user status (enabled/disabled)
      *
      * @param userId  the user ID

@@ -6,6 +6,8 @@ import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStatus;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

@@ -2,6 +2,7 @@ package com.mozilla.curriculum_tracking_system.service.user;
 
 import com.mozilla.curriculum_tracking_system.constants.RoleConstants;
 import com.mozilla.curriculum_tracking_system.dto.email.UserCredentialsEmailData;
+import com.mozilla.curriculum_tracking_system.dto.school.SchoolDto;
 import com.mozilla.curriculum_tracking_system.dto.user.AssignRoleRequest;
 import com.mozilla.curriculum_tracking_system.dto.user.CreateUserRequest;
 import com.mozilla.curriculum_tracking_system.dto.user.UserResponse;
@@ -9,10 +10,13 @@ import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
 import com.mozilla.curriculum_tracking_system.mapper.UserMapper;
 import com.mozilla.curriculum_tracking_system.model.roles.Role;
+import com.mozilla.curriculum_tracking_system.model.school.School;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.roles.RoleRepository;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import com.mozilla.curriculum_tracking_system.service.email.IEmailService;
+import com.mozilla.curriculum_tracking_system.service.school.ISchoolService;
+import com.mozilla.curriculum_tracking_system.service.school.SchoolService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,6 +35,7 @@ public class UserManagementService implements IUserManagementService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final IEmailService emailService;
+    private final ISchoolService schoolService;
 
     @Override
     @Transactional
@@ -151,6 +156,28 @@ public class UserManagementService implements IUserManagementService {
         } catch (Exception e) {
             throw new BadRequestException("Failed to retrieve users by role");
         }
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getDeanEmailBySchool(Long schoolId){
+
+        SchoolDto school = schoolService.getSchoolById(schoolId);
+
+        Long schoolDeanId = school.getDeanId();
+
+        if (schoolDeanId == null) {
+            throw new IllegalStateException("School with ID " + schoolId + " has no assigned dean");
+        }
+
+        UserResponse dean = getUserById(schoolDeanId);
+
+        if (dean == null || dean.getEmail() == null) {
+            throw new IllegalStateException("Dean with ID " + schoolDeanId + " not found or has no email");
+        }
+
+        return dean.getEmail();
     }
 
     @Override

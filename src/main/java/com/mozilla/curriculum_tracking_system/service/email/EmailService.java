@@ -2,6 +2,8 @@ package com.mozilla.curriculum_tracking_system.service.email;
 
 import com.mozilla.curriculum_tracking_system.dto.email.EmailRequest;
 import com.mozilla.curriculum_tracking_system.dto.email.UserCredentialsEmailData;
+import com.mozilla.curriculum_tracking_system.dto.notification.NotificationDto;
+import com.mozilla.curriculum_tracking_system.enums.NotificationPriority;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import jakarta.mail.MessagingException;
@@ -181,6 +183,46 @@ public class EmailService implements IEmailService {
                 .replaceAll("<[^>]+>", "")
                 .replaceAll("\\s+", " ")
                 .trim();
+    }
+
+    @Override
+    public void sendNotificationEmail(NotificationDto notification) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("recipientName", notification.getUsername());
+        variables.put("title", notification.getTitle());
+        variables.put("message", notification.getMessage());
+        variables.put("priority", notification.getPriority().toString());
+        variables.put("notificationDate", notification.getCreatedAt().format(DATETIME_FORMAT));
+        addCommonEmailVariables(variables);
+
+        String subject = getPriorityPrefix(notification.getPriority()) + " " + notification.getTitle();
+
+        EmailRequest emailRequest = EmailRequest.builder()
+                .to(notification.getEmail())
+                .subject(subject)
+                .templateName("generic-notification")
+                .variables(variables)
+                .isHtml(true)
+                .build();
+
+        sendEmail(emailRequest);
+    }
+
+    private void addCommonEmailVariables(Map<String, Object> variables) {
+        variables.put("supportEmail", fromEmail);
+        variables.put("companyName", "Meru University of Science and Technology");
+        variables.put("currentYear", java.time.Year.now().getValue());
+        variables.put("systemName", "Curriculum Tracking System");
+        variables.put("dashboardUrl", frontendUrl + "/dashboard");
+    }
+
+    private String getPriorityPrefix(NotificationPriority priority) {
+        return switch (priority) {
+            case URGENT -> "🚨 URGENT:";
+            case HIGH -> "🔴 HIGH:";
+            case MEDIUM -> "🟡 MEDIUM:";
+            case LOW -> "🟢";
+        };
     }
 
 }

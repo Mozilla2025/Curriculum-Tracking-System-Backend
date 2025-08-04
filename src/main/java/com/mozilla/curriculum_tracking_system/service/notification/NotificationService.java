@@ -5,8 +5,11 @@ import com.mozilla.curriculum_tracking_system.enums.NotificationPriority;
 import com.mozilla.curriculum_tracking_system.enums.NotificationType;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import com.mozilla.curriculum_tracking_system.model.notification.Notification;
-import com.mozilla.curriculum_tracking_system.repository.NotificationRepository;
+import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
+import com.mozilla.curriculum_tracking_system.model.user.User;
+import com.mozilla.curriculum_tracking_system.repository.notification.NotificationRepository;
 import com.mozilla.curriculum_tracking_system.service.email.IEmailService;
+import com.mozilla.curriculum_tracking_system.service.tracking.ICurriculumTrackingNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,7 +24,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class NotificationService implements INotificationService {
+public class NotificationService implements INotificationService, ICurriculumTrackingNotificationService {
 
     private final NotificationRepository notificationRepository;
     private final IEmailService emailService;
@@ -30,13 +33,18 @@ public class NotificationService implements INotificationService {
     @Transactional
     public NotificationDto createNotification(NotificationDto notificationDto) {
 
+        User user = User.builder()
+                .id(notificationDto.getUserId())
+                .email(notificationDto.getEmail())
+                .username(notificationDto.getUsername())
+                .build();
+
         Notification notification = Notification.builder()
                 .title(notificationDto.getTitle())
                 .message(notificationDto.getMessage())
                 .type(notificationDto.getType())
                 .priority(notificationDto.getPriority())
-                .recipientEmail(notificationDto.getRecipientEmail())
-                .recipientName(notificationDto.getRecipientName())
+                .user(user)
                 .scheduledFor(notificationDto.getScheduledFor() != null ?
                         notificationDto.getScheduledFor() : LocalDateTime.now())
                 .build();
@@ -54,8 +62,8 @@ public class NotificationService implements INotificationService {
 
     @Override
     @Transactional
-    public NotificationDto createCurriculumDueNotification(Curriculum curriculum,
-                                                           Long recipientId, String recipientEmail, String recipientName) {
+    public NotificationDto sendCurriculumReviewDueNotification(User schoolDean,
+                                                         Curriculum curriculum) {
 
         NotificationDto notificationDto = NotificationDto.builder()
                 .title("Curriculum Review Due")
@@ -63,8 +71,10 @@ public class NotificationService implements INotificationService {
                         "' is due for review. Please begin the review process.")
                 .type(NotificationType.CURRICULUM_DUE_FOR_REVIEW)
                 .priority(NotificationPriority.HIGH)
-                .recipientEmail(recipientEmail)
-                .recipientName(recipientName)
+                .curriculumName(curriculum.getName())
+                .userId(schoolDean.getId())
+                .email(schoolDean.getEmail())
+                .username(schoolDean.getUsername())
                 .build();
 
         return createNotification(notificationDto);
@@ -89,6 +99,25 @@ public class NotificationService implements INotificationService {
                 .curriculumName(curriculum.getName())
                 .recipientEmail(recipientEmail)
                 .recipientName(recipientName)
+                .build();
+
+        return createNotification(notificationDto);
+    }
+
+    @Override
+    @Transactional
+    public NotificationDto sendOverdueReminderNotification(CurriculumTracking curriculumTracking,
+                                                           User user) {
+
+        NotificationDto notificationDto = NotificationDto.builder()
+                .title("Curriculum Review Due")
+                .message("The curriculum '" + curriculumTracking.getCurriculum() +
+                        "' is due for review. Please begin the review process.")
+                .type(NotificationType.CURRICULUM_DUE_FOR_REVIEW)
+                .priority(NotificationPriority.HIGH)
+                .userId(user.getId())
+                .email(user.getEmail())
+                .username(user.getUsername())
                 .build();
 
         return createNotification(notificationDto);
@@ -257,5 +286,61 @@ public class NotificationService implements INotificationService {
                 .readAt(notification.getReadAt())
                 .scheduledFor(notification.getScheduledFor())
                 .build();
+    }
+
+
+    @Override
+    public NotificationDto createStatusUpdateNotification(CurriculumReview curriculumReview, Long recipientId, String recipientEmail, String recipientName, String statusUpdate) {
+        return null;
+    }
+
+    @Override
+    public void sendSubmissionNotification(Long trackingId, Long assigneeId) {
+
+    }
+
+    @Override
+    public void sendApprovalNotification(Long trackingId) {
+
+    }
+
+    @Override
+    public void sendSentBackNotification(Long trackingId, String comments) {
+
+    }
+
+    @Override
+    public void sendAssignmentNotification(Long trackingId, Long assigneeId) {
+
+    }
+
+    @Override
+    public void sendOverdueReminderNotification(Long trackingId) {
+
+    }
+
+    @Override
+    public void sendOverdueReminders() {
+
+    }
+
+    @Override
+    public void sendDocumentUploadNotification(Long trackingId, String documentName) {
+
+    }
+
+    @Override
+    public void sendAccreditationNotification(Long trackingId) {
+
+    }
+
+    @Override
+    public Object getUserNotificationPreferences(Long userId) {
+        return null;
+    }
+
+    @Override
+    public void updateUserNotificationPreferences(Long userId, Object preferences) {
+
     }
 }

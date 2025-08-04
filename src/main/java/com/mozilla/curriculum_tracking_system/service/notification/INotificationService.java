@@ -18,9 +18,8 @@ public interface INotificationService {
     void deleteNotification(Long notificationId);
 
     // Curriculum-specific notifications
-    NotificationDto createCurriculumDueNotification(Curriculum curriculum, Long recipientId,
-                                                    String recipientEmail, String recipientName);
-
+    NotificationDto createCurriculumDueNotification(CurriculumReview curriculumReview,
+                                                    Long recipientId, String recipientEmail, String recipientName);
     NotificationDto createReminderNotification(CurriculumReview curriculumReview,
                                                Long recipientId, String recipientEmail, String recipientName);
     NotificationDto createOverdueNotification(CurriculumReview curriculumReview,

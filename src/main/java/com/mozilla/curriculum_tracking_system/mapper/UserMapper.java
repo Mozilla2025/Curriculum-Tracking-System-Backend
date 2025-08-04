@@ -29,6 +29,32 @@ public class UserMapper {
     }
 
     /**
+     * Maps UserResponse DTO to User entity
+     * Note: This creates a User without roles populated and without password
+     * You may need to fetch roles separately if needed
+     *
+     * @param userResponse the UserResponse DTO
+     * @return User entity
+     */
+    public User toEntity(UserResponse userResponse) {
+        return User.builder()
+                .id(userResponse.getId())
+                .username(userResponse.getUsername())
+                .email(userResponse.getEmail())
+                .firstName(userResponse.getFirstName())
+                .lastName(userResponse.getLastName())
+                .phoneNumber(userResponse.getPhoneNumber())
+                .isEnabled(userResponse.isEnabled())
+                .isAccountNonExpired(true)
+                .isAccountNonLocked(true)
+                .isCredentialsNonExpired(true)
+                .createdAt(userResponse.getCreatedAt())
+                .updatedAt(userResponse.getUpdatedAt())
+                // Note: password is not included in UserResponse for security reasons
+                // roles are not mapped here as UserResponse contains role names, not Role entities
+                .build();
+    }
+    /**
      * Maps User entity to UserResponse DTO
      *
      * @param user the user entity

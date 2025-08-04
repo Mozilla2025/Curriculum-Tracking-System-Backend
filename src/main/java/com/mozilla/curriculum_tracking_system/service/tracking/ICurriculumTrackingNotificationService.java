@@ -1,5 +1,9 @@
 package com.mozilla.curriculum_tracking_system.service.tracking;
 
+import com.mozilla.curriculum_tracking_system.dto.notification.NotificationDto;
+import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
+import com.mozilla.curriculum_tracking_system.model.user.User;
+
 /**
  * Service interface for curriculum tracking notifications
  */
@@ -28,7 +32,7 @@ public interface ICurriculumTrackingNotificationService {
     /**
      * Send overdue reminder notification
      */
-    void sendOverdueReminderNotification(Long trackingId);
+    NotificationDto sendOverdueReminderNotification(CurriculumTracking curriculumTracking, User user);
 
     /**
      * Send bulk notifications for overdue items
