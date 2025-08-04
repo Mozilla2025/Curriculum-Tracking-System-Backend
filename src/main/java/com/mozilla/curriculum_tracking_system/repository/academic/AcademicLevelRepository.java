@@ -9,5 +9,6 @@ import java.util.Optional;
 @Repository
 public interface AcademicLevelRepository extends JpaRepository<AcademicLevel, Long> {
     Optional<AcademicLevel> findByName(String name);
+
     boolean existsByNameAndIdNot(String name, Long id);
 }

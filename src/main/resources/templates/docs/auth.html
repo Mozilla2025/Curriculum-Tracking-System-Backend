@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>API Documentation Access - Curriculum Tracking System</title>
+
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        /* Main container */
+        .auth-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Header section */
+        .auth-header {
+            margin-bottom: 30px;
+        }
+
+        .auth-icon {
+            font-size: 60px;
+            color: #667eea;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .auth-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            font-size: 16px;
+            color: #718096;
+            line-height: 1.5;
+        }
+
+        /* Form styles */
+        .auth-form {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            background-color: #f7fafc;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: #667eea;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: #a0aec0;
+        }
+
+        /* Button styles */
+        .auth-button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .auth-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .auth-button:active {
+            transform: translateY(0);
+        }
+
+        .auth-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Alert messages */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .alert-error {
+            background-color: #fed7d7;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+
+        .alert-success {
+            background-color: #c6f6d5;
+            color: #2f855a;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert-info {
+            background-color: #bee3f8;
+            color: #2c5282;
+            border: 1px solid #90cdf4;
+        }
+
+        /* Footer */
+        .auth-footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 13px;
+            color: #718096;
+        }
+
+        .auth-footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Security notice */
+        .security-notice {
+            background: linear-gradient(135deg, #fff5cd 0%, #fef5e7 100%);
+            border: 1px solid #f6e05e;
+            border-left: 4px solid #ed8936;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .security-notice-title {
+            font-weight: 600;
+            color: #c05621;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .security-notice-text {
+            font-size: 13px;
+            color: #744210;
+            line-height: 1.4;
+        }
+
+        /* Loading state */
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+
+            .auth-title {
+                font-size: 24px;
+            }
+
+            .auth-icon {
+                font-size: 50px;
+            }
+        }
+
+        /* Focus styles for accessibility */
+        .auth-button:focus,
+        .form-input:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .auth-container {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="auth-container">
+    <!-- Header -->
+    <div class="auth-header">
+        <span class="auth-icon">🔐</span>
+        <h1 class="auth-title">Curriculum API Documentation Access</h1>
+        <p class="auth-subtitle">
+            Please enter the documentation password to access the API Swagger documentation.
+        </p>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${error}" class="alert alert-error" role="alert">
+        <span th:text="${error}">Error message</span>
+    </div>
+
+    <div th:if="${message}" class="alert alert-success" role="alert">
+        <span th:text="${message}">Success message</span>
+    </div>
+
+    <!-- Authentication Form -->
+    <form class="auth-form" method="post" th:action="@{/docs/authenticate}" id="authForm">
+        <div class="form-group">
+            <label for="password" class="form-label">Documentation Password</label>
+            <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    class="form-input"
+                    placeholder="Enter documentation password"
+                    required
+                    autocomplete="current-password"
+                    aria-describedby="password-help"
+            >
+        </div>
+
+        <!-- Hidden field for redirect URL -->
+        <input type="hidden" name="redirectUrl" th:value="${param.redirectUrl}" />
+
+        <button type="submit" class="auth-button" id="submitBtn">
+            <span class="button-text">Access Documentation</span>
+            <span class="loading" id="loadingSpinner">
+                    <span class="spinner"></span>
+                    Authenticating...
+                </span>
+        </button>
+    </form>
+
+    <!-- Security Notice -->
+    <div class="security-notice">
+        <div class="security-notice-title">🛡️ Security Notice</div>
+        <div class="security-notice-text">
+            This area contains sensitive API documentation. Access is logged and monitored.
+            Please ensure you have authorization to view this content.
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="auth-footer">
+        <p>
+            &copy; <span th:text="${#dates.year(#dates.createNow())}">2025</span>
+            Curriculum Tracking System. All rights reserved.
+        </p>
+        <p style="margin-top: 8px;">
+            Need help? Contact your administrator.
+        </p>
+    </div>
+</div>
+
+<script>
+    // Form submission handling
+    document.getElementById('authForm').addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submitBtn');
+        const buttonText = submitBtn.querySelector('.button-text');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        // Show loading state
+        buttonText.style.display = 'none';
+        loadingSpinner.classList.add('active');
+        submitBtn.disabled = true;
+
+        // Re-enable form after 10 seconds as fallback
+        setTimeout(function() {
+            buttonText.style.display = 'inline';
+            loadingSpinner.classList.remove('active');
+            submitBtn.disabled = false;
+        }, 10000);
+    });
+
+    // Auto-focus password field
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordField = document.getElementById('password');
+        if (passwordField) {
+            passwordField.focus();
+        }
+    });
+
+    // Handle Enter key press
+    document.getElementById('password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('authForm').submit();
+        }
+    });
+
+    // Clear any previous form data on page load
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            document.getElementById('authForm').reset();
+            const submitBtn = document.getElementById('submitBtn');
+            const buttonText = submitBtn.querySelector('.button-text');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+
+            buttonText.style.display = 'inline';
+            loadingSpinner.classList.remove('active');
+            submitBtn.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

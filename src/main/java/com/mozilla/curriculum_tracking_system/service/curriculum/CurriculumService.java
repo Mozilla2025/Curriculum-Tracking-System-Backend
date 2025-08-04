@@ -6,7 +6,7 @@ import com.mozilla.curriculum_tracking_system.enums.CurriculumStatus;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
 import com.mozilla.curriculum_tracking_system.exception.UnauthorizedException;
-import com.mozilla.curriculum_tracking_system.mapper.CurriculumMapper;
+import com.mozilla.curriculum_tracking_system.mapper.curriculum.CurriculumMapper;
 import com.mozilla.curriculum_tracking_system.model.academic.AcademicLevel;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import com.mozilla.curriculum_tracking_system.model.department.Department;
@@ -16,8 +16,8 @@ import com.mozilla.curriculum_tracking_system.repository.curriculum.CurriculumRe
 import com.mozilla.curriculum_tracking_system.repository.department.DepartmentRepository;
 import com.mozilla.curriculum_tracking_system.repository.school.SchoolRepository;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
-import com.mozilla.curriculum_tracking_system.util.CurriculumSpecification;
 import com.mozilla.curriculum_tracking_system.util.CacheKeyGenerator;
+import com.mozilla.curriculum_tracking_system.util.specifications.CurriculumSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;

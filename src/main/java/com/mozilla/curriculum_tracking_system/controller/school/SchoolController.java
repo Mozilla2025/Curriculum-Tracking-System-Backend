@@ -1,8 +1,8 @@
 package com.mozilla.curriculum_tracking_system.controller.school;
 
 import com.mozilla.curriculum_tracking_system.dto.school.SchoolDto;
-import com.mozilla.curriculum_tracking_system.mapper.CurriculumMapper;
-import com.mozilla.curriculum_tracking_system.mapper.DepartmentMapper;
+import com.mozilla.curriculum_tracking_system.mapper.curriculum.CurriculumMapper;
+import com.mozilla.curriculum_tracking_system.mapper.department.DepartmentMapper;
 import com.mozilla.curriculum_tracking_system.service.school.ISchoolService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ public class SchoolController {
     private final CurriculumMapper curriculumMapper;
 
     @GetMapping("/get-all")
-    public ResponseEntity<List<SchoolDto>> getAllSchools(){
+    public ResponseEntity<List<SchoolDto>> getAllSchools() {
 
         log.info("Fetching all schools");
         List<SchoolDto> schools = schoolService.getAllSchools();
@@ -35,7 +35,7 @@ public class SchoolController {
     }
 
     @GetMapping("get-by-id/{id}")
-    public ResponseEntity<SchoolDto> getSchoolById(@Valid @PathVariable Long id){
+    public ResponseEntity<SchoolDto> getSchoolById(@Valid @PathVariable Long id) {
         log.info("Fetching school with ID: {}", id);
         SchoolDto school = schoolService.getSchoolById(id);
         log.info("Found school: {}", school.getName());

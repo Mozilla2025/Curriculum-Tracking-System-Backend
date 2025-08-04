@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.mapper;
+package com.mozilla.curriculum_tracking_system.mapper.department;
 
 import com.mozilla.curriculum_tracking_system.dto.department.DepartmentDto;
 import com.mozilla.curriculum_tracking_system.dto.department.DepartmentPageResponse;
@@ -19,7 +19,6 @@ public class DepartmentMapper {
 
         return DepartmentPageResponse.builder()
                 .departments(departmentDtos)
-
 
 
                 .currentPage(departmentPage.getNumber())

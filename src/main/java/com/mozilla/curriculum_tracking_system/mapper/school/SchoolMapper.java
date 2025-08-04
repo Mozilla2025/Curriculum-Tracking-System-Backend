@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.mapper;
+package com.mozilla.curriculum_tracking_system.mapper.school;
 
 import com.mozilla.curriculum_tracking_system.dto.school.SchoolDto;
 import com.mozilla.curriculum_tracking_system.model.school.School;
@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class SchoolMapper {
 
-    public SchoolDto mapToDto(School school){
+    public SchoolDto mapToDto(School school) {
         return SchoolDto.builder()
                 .name(school.getName())
                 .code(school.getCode())

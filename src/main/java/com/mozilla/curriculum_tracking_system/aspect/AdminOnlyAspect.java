@@ -1,20 +1,18 @@
 package com.mozilla.curriculum_tracking_system.aspect;
 
-import java.nio.file.AccessDeniedException;
-
+import com.mozilla.curriculum_tracking_system.annotation.AdminOnly;
+import com.mozilla.curriculum_tracking_system.constants.RoleConstants;
+import com.mozilla.curriculum_tracking_system.util.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import com.mozilla.curriculum_tracking_system.annotation.AdminOnly;
-import com.mozilla.curriculum_tracking_system.constants.RoleConstants;
-import com.mozilla.curriculum_tracking_system.util.JwtUtil;
-
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.nio.file.AccessDeniedException;
 
 @Aspect
 @Component
@@ -34,7 +32,7 @@ public class AdminOnlyAspect {
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new AccessDeniedException("No Valid token provided");
-            
+
         }
 
         String token = authHeader.substring(7);

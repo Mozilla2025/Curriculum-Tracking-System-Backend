@@ -5,12 +5,12 @@ import com.mozilla.curriculum_tracking_system.dto.auth.LoginResponse;
 import com.mozilla.curriculum_tracking_system.dto.auth.RefreshTokenRequest;
 import com.mozilla.curriculum_tracking_system.response.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.HashMap;
 import java.util.Map;
 

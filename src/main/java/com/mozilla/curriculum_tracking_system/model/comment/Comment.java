@@ -3,7 +3,10 @@ package com.mozilla.curriculum_tracking_system.model.comment;
 import com.mozilla.curriculum_tracking_system.enums.CommentType;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 

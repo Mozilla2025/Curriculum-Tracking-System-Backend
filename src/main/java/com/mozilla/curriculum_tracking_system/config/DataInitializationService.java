@@ -30,6 +30,8 @@ import java.util.*;
 @Slf4j
 public class DataInitializationService implements CommandLineRunner {
 
+    // Default password for all test users
+    private static final String DEFAULT_TEST_PASSWORD = "TestUser@123";
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final AcademicLevelRepository academicLevelRepository;
@@ -37,13 +39,10 @@ public class DataInitializationService implements CommandLineRunner {
     private final DepartmentRepository departmentRepository;
     private final CurriculumRepository curriculumRepository;
     private final PasswordEncoder passwordEncoder;
-
     @Value("${app.admin.username:admin}")
     private String defaultAdminUsername;
-
     @Value("${app.admin.email:admin@curriculum.system}")
     private String defaultAdminEmail;
-
     @Value("${app.admin.password:Admin@123}")
     private String defaultAdminPassword;
 
@@ -56,6 +55,7 @@ public class DataInitializationService implements CommandLineRunner {
 //        initializeDefaultAdmin();
 //        initializeAcademicLevels();
 //        initializeSchoolsAndDepartments();
+//        initializeRoleBasedUsers();
 //        initializeCurriculums();
 
         log.info("System data initialization completed successfully!");
@@ -64,8 +64,8 @@ public class DataInitializationService implements CommandLineRunner {
     private void initializeRoles() {
         log.info("Initializing system roles...");
 
-        createRoleIfNotExists(RoleConstants.ADMIN, "System Administrator with full access");
-        createRoleIfNotExists(RoleConstants.VICE_CHANCELLOR, "Vice Chancellor of the institution");
+        createRoleIfNotExists(RoleConstants.ADMIN, "System Administrator with full access to some resources");
+        createRoleIfNotExists(RoleConstants.QA, "Senior System Administrator with full access");
         createRoleIfNotExists(RoleConstants.DEAN, "Dean of a faculty or school");
         createRoleIfNotExists(RoleConstants.HEAD_OF_DEPARTMENT, "Head of a department");
         createRoleIfNotExists(RoleConstants.ASSISTANT_ROLE, "Assistant roles to dean");
@@ -103,7 +103,7 @@ public class DataInitializationService implements CommandLineRunner {
                     .password(passwordEncoder.encode(defaultAdminPassword))
                     .firstName("System")
                     .lastName("Administrator")
-                    .phoneNumber("")
+                    .phoneNumber("+254700000001")
                     .isEnabled(true)
                     .isAccountNonExpired(true)
                     .isAccountNonLocked(true)
@@ -121,6 +121,266 @@ public class DataInitializationService implements CommandLineRunner {
         }
     }
 
+    private void initializeRoleBasedUsers() {
+        log.info("Initializing role-based test users...");
+
+        // Create QA users (Senior administrators)
+        createQAUsers();
+
+        // Create additional admin users
+        createAdditionalAdminUsers();
+
+        // Create deans for each school
+        createDeanUsers();
+
+        // Create HODs for each department
+        createHODUsers();
+
+        // Create assistant users
+        createAssistantUsers();
+
+        log.info("Role-based user initialization completed");
+    }
+
+    private void createQAUsers() {
+        log.info("Creating QA users...");
+
+        Role qaRole = roleRepository.findByName(RoleConstants.QA)
+                .orElseThrow(() -> new RuntimeException("QA role not found"));
+
+        List<UserTemplate> qaUsers = Arrays.asList(
+                new UserTemplate("qa_director", "qa.director@university.edu", "Dr. Sarah", "Mitchell", "+254700000010"),
+                new UserTemplate("qa_manager", "qa.manager@university.edu", "Prof. James", "Wilson", "+254700000011"),
+                new UserTemplate("qa_officer", "qa.officer@university.edu", "Dr. Mary", "Johnson", "+254700000012")
+        );
+
+        for (UserTemplate template : qaUsers) {
+            createUserIfNotExists(template, qaRole, "QA");
+        }
+
+        log.info("Created {} QA users", qaUsers.size());
+    }
+
+    private void createAdditionalAdminUsers() {
+        log.info("Creating additional admin users...");
+
+        Role adminRole = roleRepository.findByName(RoleConstants.ADMIN)
+                .orElseThrow(() -> new RuntimeException("Admin role not found"));
+
+        List<UserTemplate> adminUsers = Arrays.asList(
+                new UserTemplate("system_admin", "system.admin@university.edu", "Dr. Robert", "Davis", "+254700000020"),
+                new UserTemplate("tech_admin", "tech.admin@university.edu", "Ms. Linda", "Brown", "+254700000021")
+        );
+
+        for (UserTemplate template : adminUsers) {
+            createUserIfNotExists(template, adminRole, "ADMIN");
+        }
+
+        log.info("Created {} additional admin users", adminUsers.size());
+    }
+
+    private void createDeanUsers() {
+        log.info("Creating dean users for each school...");
+
+        Role deanRole = roleRepository.findByName(RoleConstants.DEAN)
+                .orElseThrow(() -> new RuntimeException("Dean role not found"));
+
+        List<School> schools = schoolRepository.findAll();
+
+        Map<String, UserTemplate> deanTemplates = getDeanTemplates();
+
+        for (School school : schools) {
+            String schoolKey = school.getCode();
+            UserTemplate template = deanTemplates.get(schoolKey);
+
+            if (template != null) {
+                User dean = createUserIfNotExists(template, deanRole, "DEAN");
+                if (dean != null) {
+                    // Update school with dean ID
+                    school.setDeanId(dean.getId());
+                    schoolRepository.save(school);
+                    log.info("Assigned dean {} to school: {}", dean.getUsername(), school.getName());
+                }
+            } else {
+                // Generate a default dean for schools not in the template
+                String deanUsername = "dean_" + school.getCode().toLowerCase();
+                String deanEmail = "dean." + school.getCode().toLowerCase() + "@university.edu";
+                UserTemplate defaultTemplate = new UserTemplate(
+                        deanUsername,
+                        deanEmail,
+                        "Dean",
+                        school.getCode(),
+                        "+254700" + String.format("%06d", 100 + school.getId())
+                );
+
+                User dean = createUserIfNotExists(defaultTemplate, deanRole, "DEAN");
+                if (dean != null) {
+                    school.setDeanId(dean.getId());
+                    schoolRepository.save(school);
+                    log.info("Assigned default dean {} to school: {}", dean.getUsername(), school.getName());
+                }
+            }
+        }
+
+        log.info("Created dean users for {} schools", schools.size());
+    }
+
+    private void createHODUsers() {
+        log.info("Creating HOD users for each department...");
+
+        Role hodRole = roleRepository.findByName(RoleConstants.HEAD_OF_DEPARTMENT)
+                .orElseThrow(() -> new RuntimeException("HOD role not found"));
+
+        List<Department> departments = departmentRepository.findAll();
+        int phoneCounter = 200;
+
+        for (Department department : departments) {
+            String hodUsername = generateHODUsername(department.getName());
+            String hodEmail = generateHODEmail(department.getName(), department.getSchool().getCode());
+            String hodFirstName = "Dr. " + generateFirstName(department.getName());
+            String hodLastName = generateLastName(department.getName());
+            String phoneNumber = "+254700" + String.format("%06d", phoneCounter++);
+
+            UserTemplate template = new UserTemplate(hodUsername, hodEmail, hodFirstName, hodLastName, phoneNumber);
+            User hod = createUserIfNotExists(template, hodRole, "HOD");
+
+            if (hod != null) {
+                // Update department with HOD ID
+                department.setHeadId(hod.getId());
+                departmentRepository.save(department);
+                log.info("Assigned HOD {} to department: {}", hod.getUsername(), department.getName());
+            }
+        }
+
+        log.info("Created HOD users for {} departments", departments.size());
+    }
+
+    private void createAssistantUsers() {
+        log.info("Creating assistant users...");
+
+        Role assistantRole = roleRepository.findByName(RoleConstants.ASSISTANT_ROLE)
+                .orElseThrow(() -> new RuntimeException("Assistant role not found"));
+
+        List<UserTemplate> assistantUsers = Arrays.asList(
+                new UserTemplate("assistant_academic", "assistant.academic@university.edu", "Ms. Grace", "Wanjiku", "+254700000300"),
+                new UserTemplate("assistant_admin", "assistant.admin@university.edu", "Mr. David", "Kiprotich", "+254700000301"),
+                new UserTemplate("assistant_qa", "assistant.qa@university.edu", "Ms. Faith", "Achieng", "+254700000302"),
+                new UserTemplate("assistant_registry", "assistant.registry@university.edu", "Mr. John", "Mwangi", "+254700000303")
+        );
+
+        for (UserTemplate template : assistantUsers) {
+            createUserIfNotExists(template, assistantRole, "ASSISTANT");
+        }
+
+        log.info("Created {} assistant users", assistantUsers.size());
+    }
+
+    private User createUserIfNotExists(UserTemplate template, Role role, String roleType) {
+        if (!userRepository.existsByUsername(template.username) && !userRepository.existsByEmail(template.email)) {
+            User user = User.builder()
+                    .username(template.username)
+                    .email(template.email)
+                    .password(passwordEncoder.encode(DEFAULT_TEST_PASSWORD))
+                    .firstName(template.firstName)
+                    .lastName(template.lastName)
+                    .phoneNumber(template.phoneNumber)
+                    .isEnabled(true)
+                    .isAccountNonExpired(true)
+                    .isAccountNonLocked(true)
+                    .isCredentialsNonExpired(true)
+                    .roles(Set.of(role))
+                    .build();
+
+            User savedUser = userRepository.save(user);
+            log.info("Created {} user: {} ({})", roleType, template.username, template.email);
+            return savedUser;
+        } else {
+            log.debug("{} user already exists: {}", roleType, template.username);
+            return userRepository.findByUsername(template.username).orElse(null);
+        }
+    }
+
+    private Map<String, UserTemplate> getDeanTemplates() {
+        Map<String, UserTemplate> templates = new HashMap<>();
+
+        templates.put("SET", new UserTemplate("dean_set", "dean.set@university.edu",
+                "Prof. Michael", "Njoroge", "+254700000050"));
+        templates.put("SBE", new UserTemplate("dean_sbe", "dean.sbe@university.edu",
+                "Dr. Patricia", "Wambui", "+254700000051"));
+        templates.put("SHS", new UserTemplate("dean_shs", "dean.shs@university.edu",
+                "Prof. Anthony", "Kipchoge", "+254700000052"));
+        templates.put("SNS", new UserTemplate("dean_sns", "dean.sns@university.edu",
+                "Dr. Elizabeth", "Nyong", "+254700000053"));
+        templates.put("SSH", new UserTemplate("dean_ssh", "dean.ssh@university.edu",
+                "Prof. Samuel", "Mutua", "+254700000054"));
+        templates.put("SE", new UserTemplate("dean_se", "dean.se@university.edu",
+                "Dr. Catherine", "Wairimu", "+254700000055"));
+        templates.put("SAES", new UserTemplate("dean_saes", "dean.saes@university.edu",
+                "Prof. Joseph", "Kariuki", "+254700000056"));
+        templates.put("SL", new UserTemplate("dean_sl", "dean.sl@university.edu",
+                "Dr. Margaret", "Adhiambo", "+254700000057"));
+
+        return templates;
+    }
+
+    private String generateHODUsername(String departmentName) {
+        String cleanName = departmentName.toLowerCase()
+                .replaceAll("[^a-z\\s]", "")
+                .replaceAll("\\s+", "_")
+                .replaceAll("and", "");
+
+        // Take first 3 letters of significant words
+        String[] words = cleanName.split("_");
+        StringBuilder username = new StringBuilder("hod_");
+
+        for (String word : words) {
+            if (word.length() >= 3 && !word.equals("and") && !word.equals("the") && !word.equals("of")) {
+                username.append(word.substring(0, Math.min(3, word.length())));
+            }
+        }
+
+        return username.toString().length() > 20 ? username.substring(0, 20) : username.toString();
+    }
+
+    private String generateHODEmail(String departmentName, String schoolCode) {
+        String cleanName = departmentName.toLowerCase()
+                .replaceAll("[^a-z\\s]", "")
+                .replaceAll("\\s+", ".")
+                .replaceAll("and", "");
+
+        String[] words = cleanName.split("\\.");
+        StringBuilder emailPrefix = new StringBuilder("hod.");
+
+        for (String word : words) {
+            if (word.length() >= 3 && !word.equals("and") && !word.equals("the") && !word.equals("of")) {
+                emailPrefix.append(word.substring(0, Math.min(4, word.length()))).append(".");
+            }
+        }
+
+        return emailPrefix.toString().replaceAll("\\.$", "") + "@" + schoolCode.toLowerCase() + ".university.edu";
+    }
+
+    private String generateFirstName(String departmentName) {
+        List<String> firstNames = Arrays.asList(
+                "Peter", "Mary", "John", "Grace", "David", "Faith", "Samuel", "Catherine",
+                "Michael", "Patricia", "Anthony", "Elizabeth", "Joseph", "Margaret", "Daniel", "Susan"
+        );
+
+        int hash = Math.abs(departmentName.hashCode());
+        return firstNames.get(hash % firstNames.size());
+    }
+
+    private String generateLastName(String departmentName) {
+        List<String> lastNames = Arrays.asList(
+                "Njoroge", "Wambui", "Kipchoge", "Nyong", "Mutua", "Wairimu", "Kariuki", "Adhiambo",
+                "Mwangi", "Achieng", "Kiprotich", "Wanjiku", "Mbugua", "Chebet", "Ochieng", "Nduta"
+        );
+
+        int hash = Math.abs((departmentName + "lastname").hashCode());
+        return lastNames.get(hash % lastNames.size());
+    }
+
+    // Rest of the existing methods remain the same...
     private void initializeAcademicLevels() {
         log.info("Initializing academic levels...");
 
@@ -395,7 +655,6 @@ public class DataInitializationService implements CommandLineRunner {
             baseYears = 3;
         }
 
-
         return new ArrayList<>(createDepartmentSpecificCurriculums(departmentName, baseName, baseDuration, baseYears));
     }
 
@@ -577,10 +836,14 @@ public class DataInitializationService implements CommandLineRunner {
         return candidateCode;
     }
 
+    // Record classes for data templates
     private record SchoolData(String name, String code, String email) {
     }
 
     private record CurriculumTemplate(String name, int durationSemesters, int durationYears, CurriculumStatus status,
                                       String suffix) {
+    }
+
+    private record UserTemplate(String username, String email, String firstName, String lastName, String phoneNumber) {
     }
 }

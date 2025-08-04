@@ -10,7 +10,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     properties:
       hibernate:
         default_schema: public
@@ -38,6 +38,11 @@ spring:
             required: true
           ssl:
             trust: smtp.gmail.com
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
 
   # Redis Cloud Configuration
   data:
@@ -69,6 +74,7 @@ server:
   port: 8090
   servlet:
     context-path: /
+
 app:
   jwtSecret: ${jwt.secret}
   jwtExpirationMs: ${jwt.expiration.ms}
@@ -87,8 +93,16 @@ app:
     ttl:
       departments: 1800
       schools: 3600
+  # Documentation Security Configuration
+  docs:
+    password-protection:
+      enabled: true
+    password: ${docs.password:SwaggerDocs@2025}
+    session-timeout-hours: 24
+
 api:
   prefix: api/v1
+
 logging:
   level:
     com:
@@ -108,3 +122,31 @@ logging:
               BasicBinder: TRACE
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss} - %msg%n'
+
+aws:
+  accessKeyId: ${aws.access.key}
+  secretKey: ${aws.secret.key}
+  s3:
+    bucket: ${aws.bucket.name}
+  region: ${aws.region.name}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    displayRequestDuration: true
+    displayOperationId: false
+    showExtensions: true
+    showCommonExtensions: true
+    defaultModelsExpandDepth: 2
+    defaultModelExpandDepth: 2
+    docExpansion: none
+  show-actuator: false
+  use-management-port: false
+  cache:
+    disabled: false

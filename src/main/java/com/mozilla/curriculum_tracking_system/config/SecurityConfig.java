@@ -31,79 +31,102 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-        private final UserDetailsServiceImpl userDetailsService;
-        private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-        private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final UserDetailsServiceImpl userDetailsService;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-        @Bean
-        public PasswordEncoder passwordEncoder() {
-                return new BCryptPasswordEncoder();
-        }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-        @Bean
-        public DaoAuthenticationProvider authenticationProvider() {
-                DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
-                authenticationProvider.setUserDetailsService(userDetailsService);
-                authenticationProvider.setPasswordEncoder(passwordEncoder());
-                return authenticationProvider;
-        }
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
+        authenticationProvider.setUserDetailsService(userDetailsService);
+        authenticationProvider.setPasswordEncoder(passwordEncoder());
+        return authenticationProvider;
+    }
 
-        @Bean
-        public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
-                return configuration.getAuthenticationManager();
-        }
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
 
-        @Bean
-        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-                http
-                                .cors(cors -> cors.configurationSource(configurationSource()))
-                                .csrf(AbstractHttpConfigurer::disable)
-                                .exceptionHandling(ex -> ex
-                                                .authenticationEntryPoint(jwtAuthenticationEntryPoint))
-                                .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                                .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(
-                                                                "/api/v1/auth/login",
-                                                                "/api/v1/auth/password/**",
-                                                                "/api/v1/auth/refresh",
-                                                                "/actuator/health")
-                                                .permitAll()
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .cors(cors -> cors.configurationSource(configurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/password/**",
+                                "/api/v1/auth/refresh"
+                        ).permitAll()
 
-                                                .requestMatchers(
-                                                                "/api/v1/auth/register",
-                                                                "/api/v1/users/create",
-                                                                "/api/v1/users/assign-role",
-                                                                "/api/v1/users/admin/**")
-                                                .hasRole("ADMIN")
+                        .requestMatchers(
+                                "/docs/auth",
+                                "/docs/authenticate",
+                                "/docs/logout"
+                        ).permitAll()
 
-                                                .anyRequest().authenticated())
-                                .authenticationProvider(authenticationProvider())
-                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/api-docs/**"
+                        ).permitAll()
 
-                return http.build();
-        }
+                        .requestMatchers(
+                                "/css/**",
+                                "/js/**",
+                                "/images/**",
+                                "/webjars/**",
+                                "/favicon.ico"
+                        ).permitAll()
 
-        @Bean
-        public CorsConfigurationSource configurationSource() {
-                CorsConfiguration corsConfiguration = new CorsConfiguration();
+                        .requestMatchers(
+                                "/api/v1/auth/register",
+                                "/api/v1/users/create",
+                                "/api/v1/users/assign-role",
+                                "/api/v1/users/admin/**"
+                        ).hasRole("ADMIN")
 
-                corsConfiguration.setAllowedOriginPatterns(List.of(
-                                "https://curiculum-tracking-system-frontend.vercel.app",
-                                "https://1rrq4qld-5173.uks1.devtunnels.ms",
-                                "http://localhost:5173"));
+                        .anyRequest().authenticated())
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-                corsConfiguration.setAllowedMethods(Arrays.asList(
-                                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        return http.build();
+    }
 
-                corsConfiguration.setAllowedHeaders(Arrays.asList(
-                                "Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
+    @Bean
+    public CorsConfigurationSource configurationSource() {
+        CorsConfiguration corsConfiguration = new CorsConfiguration();
 
-                corsConfiguration.setAllowCredentials(true);
-                corsConfiguration.setMaxAge(3600L);
+        corsConfiguration.setAllowedOriginPatterns(List.of(
+                "https://curiculum-tracking-system-frontend.vercel.app",
+                "https://1rrq4qld-5173.uks1.devtunnels.ms",
+                "http://localhost:5173",
+                "http://localhost:3000"
+        ));
 
-                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-                source.registerCorsConfiguration("/**", corsConfiguration);
-                return source;
-        }
+        corsConfiguration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+
+        corsConfiguration.setAllowedHeaders(Arrays.asList(
+                "Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
+
+        corsConfiguration.setAllowCredentials(true);
+        corsConfiguration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", corsConfiguration);
+        return source;
+    }
 }

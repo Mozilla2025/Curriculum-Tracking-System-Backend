@@ -1,11 +1,11 @@
-package com.mozilla.curriculum_tracking_system.mapper;
+package com.mozilla.curriculum_tracking_system.mapper.curriculum;
 
-import com.mozilla.curriculum_tracking_system.dto.curriculum.CurriculumDto;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CreateCurriculumRequest;
+import com.mozilla.curriculum_tracking_system.dto.curriculum.CurriculumDto;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CurriculumPageResponse;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.UpdateCurriculumRequest;
-import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import com.mozilla.curriculum_tracking_system.model.academic.AcademicLevel;
+import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import com.mozilla.curriculum_tracking_system.model.department.Department;
 import com.mozilla.curriculum_tracking_system.model.school.School;
 import org.springframework.data.domain.Page;
