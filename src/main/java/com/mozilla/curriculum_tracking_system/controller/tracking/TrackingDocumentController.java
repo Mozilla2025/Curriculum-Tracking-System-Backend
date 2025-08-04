@@ -1,5 +1,6 @@
 package com.mozilla.curriculum_tracking_system.controller.tracking;
 
+import com.mozilla.curriculum_tracking_system.documentation.TrackingDocumentControllerDocs;
 import com.mozilla.curriculum_tracking_system.dto.tracking.TrackingDocumentDto;
 import com.mozilla.curriculum_tracking_system.enums.DocumentType;
 import com.mozilla.curriculum_tracking_system.response.ApiResponse;
@@ -31,7 +32,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Validated
 @Slf4j
-public class TrackingDocumentController {
+public class TrackingDocumentController implements TrackingDocumentControllerDocs {
 
     private final ITrackingDocumentStorageService documentStorageService;
     private final IAuthenticationService authenticationService;
@@ -193,6 +194,7 @@ public class TrackingDocumentController {
 
         return ResponseEntity.ok(apiResponse);
     }
+
 
     /**
      * Get documents by type for a specific tracking

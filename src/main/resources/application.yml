@@ -123,3 +123,25 @@ aws:
   s3:
     bucket: ${aws.bucket.name}
   region: ${aws.region.name}
+
+
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    displayRequestDuration: true
+    displayOperationId: false
+    showExtensions: true
+    showCommonExtensions: true
+    defaultModelsExpandDepth: 2
+    defaultModelExpandDepth: 2
+    docExpansion: none
+  show-actuator: false
+  use-management-port: false
+  cache:
+    disabled: false

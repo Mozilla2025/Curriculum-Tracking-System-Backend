@@ -1,5 +1,6 @@
 package com.mozilla.curriculum_tracking_system.controller.tracking;
 
+import com.mozilla.curriculum_tracking_system.documentation.CurriculumTrackingControllerDocs;
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingDetailDto;
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingPageResponse;
 import com.mozilla.curriculum_tracking_system.dto.tracking.InitiateTrackingRequest;
@@ -31,7 +32,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Validated
 @Slf4j
-public class CurriculumTrackingController {
+public class CurriculumTrackingController implements CurriculumTrackingControllerDocs {
 
     private final ICurriculumTrackingService curriculumTrackingService;
     private final IAuthenticationService authenticationService;
