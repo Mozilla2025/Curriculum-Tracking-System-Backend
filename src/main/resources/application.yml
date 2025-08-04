@@ -93,6 +93,12 @@ app:
     ttl:
       departments: 1800
       schools: 3600
+  # Documentation Security Configuration
+  docs:
+    password-protection:
+      enabled: true
+    password: ${docs.password:SwaggerDocs@2025}
+    session-timeout-hours: 24
 
 api:
   prefix: api/v1
@@ -123,7 +129,6 @@ aws:
   s3:
     bucket: ${aws.bucket.name}
   region: ${aws.region.name}
-
 
 springdoc:
   api-docs:

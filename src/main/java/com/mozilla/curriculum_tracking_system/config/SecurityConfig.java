@@ -66,19 +66,37 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/password/**",
-                                "/api/v1/auth/refresh",
+                                "/api/v1/auth/refresh"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                "/docs/auth",
+                                "/docs/authenticate",
+                                "/docs/logout"
+                        ).permitAll()
+
+                        .requestMatchers(
                                 "/actuator/health",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/api-docs/**"
                         ).permitAll()
+
+                        .requestMatchers(
+                                "/css/**",
+                                "/js/**",
+                                "/images/**",
+                                "/webjars/**",
+                                "/favicon.ico"
+                        ).permitAll()
+
                         .requestMatchers(
                                 "/api/v1/auth/register",
                                 "/api/v1/users/create",
                                 "/api/v1/users/assign-role",
-                                "/api/v1/users/admin/**")
-                        .hasRole("ADMIN")
+                                "/api/v1/users/admin/**"
+                        ).hasRole("ADMIN")
 
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
@@ -94,7 +112,9 @@ public class SecurityConfig {
         corsConfiguration.setAllowedOriginPatterns(List.of(
                 "https://curiculum-tracking-system-frontend.vercel.app",
                 "https://1rrq4qld-5173.uks1.devtunnels.ms",
-                "http://localhost:5173"));
+                "http://localhost:5173",
+                "http://localhost:3000"
+        ));
 
         corsConfiguration.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
