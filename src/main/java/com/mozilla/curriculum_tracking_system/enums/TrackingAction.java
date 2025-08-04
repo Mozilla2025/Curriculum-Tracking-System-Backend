@@ -1,5 +1,8 @@
 package com.mozilla.curriculum_tracking_system.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum TrackingAction {
     INITIATE("Initiate Tracking"),
     APPROVE("Approve"),
@@ -15,7 +18,4 @@ public enum TrackingAction {
         this.displayName = displayName;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
 }

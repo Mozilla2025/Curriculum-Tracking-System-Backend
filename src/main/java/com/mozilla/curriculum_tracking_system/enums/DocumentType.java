@@ -1,5 +1,8 @@
 package com.mozilla.curriculum_tracking_system.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum DocumentType {
     CURRICULUM_PROPOSAL("Curriculum Proposal"),
     SUPPORTING_DOCUMENTS("Supporting Documents"),
@@ -14,7 +17,4 @@ public enum DocumentType {
         this.displayName = displayName;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
 }

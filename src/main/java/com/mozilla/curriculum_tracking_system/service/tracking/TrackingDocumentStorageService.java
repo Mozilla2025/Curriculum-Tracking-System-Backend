@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.io.InputStream;
 import java.time.LocalDateTime;
@@ -68,12 +69,13 @@ public class TrackingDocumentStorageService extends S3StorageService implements 
 
     public TrackingDocumentStorageService(
             S3Client s3Client,
+            S3Presigner s3Presigner,
             TrackingDocumentRepository documentRepository,
             CurriculumTrackingRepository trackingRepository,
             TrackingStepRepository stepRepository,
             UserRepository userRepository,
             TrackingDocumentMapper documentMapper) {
-        super(s3Client);
+        super(s3Client, s3Presigner);
         this.documentRepository = documentRepository;
         this.trackingRepository = trackingRepository;
         this.stepRepository = stepRepository;

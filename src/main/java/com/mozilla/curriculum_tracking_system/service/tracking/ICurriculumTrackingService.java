@@ -121,31 +121,6 @@ public interface ICurriculumTrackingService {
     CurriculumTrackingPageResponse getTrackingsByDepartment(Long departmentId, Pageable pageable);
 
     /**
-     * Get ideation stage trackings (curriculum ideas not yet linked to existing curricula)
-     *
-     * @param pageable Pagination parameters
-     * @return Paginated tracking response
-     */
-    CurriculumTrackingPageResponse getIdeationTrackings(Pageable pageable);
-
-    /**
-     * Get overdue trackings (past expected completion date)
-     *
-     * @param pageable Pagination parameters
-     * @return Paginated tracking response
-     */
-    CurriculumTrackingPageResponse getOverdueTrackings(Pageable pageable);
-
-    /**
-     * Get trackings expiring soon
-     *
-     * @param days     Number of days to look ahead
-     * @param pageable Pagination parameters
-     * @return Paginated tracking response
-     */
-    CurriculumTrackingPageResponse getTrackingsExpiringSoon(int days, Pageable pageable);
-
-    /**
      * Update tracking information
      *
      * @param trackingId The tracking ID

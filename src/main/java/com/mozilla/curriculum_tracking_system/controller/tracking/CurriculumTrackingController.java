@@ -11,8 +11,6 @@ import com.mozilla.curriculum_tracking_system.response.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
 import com.mozilla.curriculum_tracking_system.service.tracking.ICurriculumTrackingService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -72,7 +70,6 @@ public class CurriculumTrackingController {
             ) {
         log.info("Performing tracking action: {} on tracking: {}",
                 request.getAction(), request.getTrackingId());
-
         String token = extractToken(authorizationHeader);
         CurriculumTrackingDetailDto tracking = curriculumTrackingService.performTrackingAction(request, token);
 
@@ -319,66 +316,6 @@ public class CurriculumTrackingController {
 
         ApiResponse apiResponse = new ApiResponse(
                 "Department trackings retrieved successfully",
-                trackings
-        );
-
-        return ResponseEntity.ok(apiResponse);
-    }
-
-    /**
-     * Get ideation stage trackings
-     */
-    @GetMapping("/ideation")
-    public ResponseEntity<ApiResponse> getIdeationTrackings(
-            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
-
-        log.debug("Fetching ideation trackings");
-
-        CurriculumTrackingPageResponse trackings = curriculumTrackingService.getIdeationTrackings(pageable);
-
-        ApiResponse apiResponse = new ApiResponse(
-                "Ideation trackings retrieved successfully",
-                trackings
-        );
-
-        return ResponseEntity.ok(apiResponse);
-    }
-
-    /**
-     * Get overdue trackings
-     */
-    @GetMapping("/overdue")
-    @PreAuthorize("hasAnyRole('ADMIN', 'QA', 'DEAN')")
-    public ResponseEntity<ApiResponse> getOverdueTrackings(
-            @PageableDefault(size = 20, sort = "expectedCompletionDate") Pageable pageable) {
-
-        log.debug("Fetching overdue trackings");
-
-        CurriculumTrackingPageResponse trackings = curriculumTrackingService.getOverdueTrackings(pageable);
-
-        ApiResponse apiResponse = new ApiResponse(
-                "Overdue trackings retrieved successfully",
-                trackings
-        );
-
-        return ResponseEntity.ok(apiResponse);
-    }
-
-    /**
-     * Get trackings expiring soon
-     */
-    @GetMapping("/expiring-soon")
-    @PreAuthorize("hasAnyRole('ADMIN', 'QA', 'DEAN')")
-    public ResponseEntity<ApiResponse> getTrackingsExpiringSoon(
-            @RequestParam(defaultValue = "30") @Min(1) @Max(365) int days,
-            @PageableDefault(size = 20, sort = "expectedCompletionDate") Pageable pageable) {
-
-        log.debug("Fetching trackings expiring in {} days", days);
-
-        CurriculumTrackingPageResponse trackings = curriculumTrackingService.getTrackingsExpiringSoon(days, pageable);
-
-        ApiResponse apiResponse = new ApiResponse(
-                "Trackings expiring soon retrieved successfully",
                 trackings
         );
 

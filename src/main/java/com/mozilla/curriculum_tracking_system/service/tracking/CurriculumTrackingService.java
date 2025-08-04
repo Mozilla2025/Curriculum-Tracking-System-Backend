@@ -263,45 +263,7 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         return trackingMapper.toPageResponse(trackingsPage);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public CurriculumTrackingPageResponse getIdeationTrackings(Pageable pageable) {
-        log.debug("Fetching ideation trackings");
 
-        Page<CurriculumTracking> trackingsPage = trackingRepository.findIdeationTrackings(pageable);
-        return trackingMapper.toPageResponse(trackingsPage);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public CurriculumTrackingPageResponse getOverdueTrackings(Pageable pageable) {
-        log.debug("Fetching overdue trackings");
-
-        List<CurriculumTracking> overdueTrackings = trackingRepository.findOverdueTrackings(LocalDateTime.now());
-
-        TrackingSearchCriteria criteria = TrackingSearchCriteria.builder()
-                .isOverdue(true)
-                .build();
-
-        return searchTrackings(criteria, pageable);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public CurriculumTrackingPageResponse getTrackingsExpiringSoon(int days, Pageable pageable) {
-        log.debug("Fetching trackings expiring in {} days", days);
-
-        LocalDateTime startDate = LocalDateTime.now();
-        LocalDateTime endDate = startDate.plusDays(days);
-
-        List<CurriculumTracking> expiringSoon = trackingRepository.findTrackingsExpiringSoon(startDate, endDate);
-
-        TrackingSearchCriteria criteria = TrackingSearchCriteria.builder()
-                .expectedCompletionBefore(endDate)
-                .build();
-
-        return searchTrackings(criteria, pageable);
-    }
 
     @Override
     public CurriculumTrackingDetailDto updateTracking(Long trackingId, InitiateTrackingRequest request, String authToken) {

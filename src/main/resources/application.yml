@@ -122,4 +122,4 @@ aws:
   secretKey: ${aws.secret.key}
   s3:
     bucket: ${aws.bucket.name}
-  region: ${aws.region}
+  region: ${aws.region.name}

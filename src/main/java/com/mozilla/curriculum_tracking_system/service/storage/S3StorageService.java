@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 public class S3StorageService implements IS3StorageService {
 
     private final S3Client s3Client;
+    private final S3Presigner s3Presigner;
 
     @Value("${aws.s3.bucket}:curriculumstorage")
     private String defaultBucket;
@@ -114,7 +116,7 @@ public class S3StorageService implements IS3StorageService {
     public String getDownloadUrl(String bucketName, String key, int expirationMinutes) {
         validateUrlInputs(bucketName, key, expirationMinutes);
 
-        try (S3Presigner presigner = S3Presigner.create()) {
+        try {
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)
@@ -125,7 +127,7 @@ public class S3StorageService implements IS3StorageService {
                     .getObjectRequest(getObjectRequest)
                     .build();
 
-            return presigner.presignGetObject(presignRequest).url().toString();
+            return s3Presigner.presignGetObject(presignRequest).url().toString();
 
         } catch (S3Exception e) {
             log.error("Failed to generate download URL: bucket={}, key={}, error={}", bucketName, key, e.getMessage());
@@ -133,11 +135,12 @@ public class S3StorageService implements IS3StorageService {
         }
     }
 
+
     @Override
     public String getUploadUrl(String bucketName, String key, String contentType, int expirationMinutes) {
         validateUrlInputs(bucketName, key, expirationMinutes);
 
-        try (S3Presigner presigner = S3Presigner.create()) {
+        try {
             PutObjectRequest.Builder requestBuilder = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key);
@@ -151,13 +154,15 @@ public class S3StorageService implements IS3StorageService {
                     .putObjectRequest(requestBuilder.build())
                     .build();
 
-            return presigner.presignPutObject(presignRequest).url().toString();
+            return s3Presigner.presignPutObject(presignRequest).url().toString();
 
         } catch (S3Exception e) {
             log.error("Failed to generate upload URL: bucket={}, key={}, error={}", bucketName, key, e.getMessage());
             throw new RuntimeException("Failed to generate upload URL: " + e.getMessage(), e);
         }
     }
+
+
 
     @Override
     public boolean deleteFile(String bucketName, String key) {
