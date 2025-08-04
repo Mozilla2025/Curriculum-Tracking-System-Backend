@@ -10,9 +10,13 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -93,41 +97,12 @@ public interface TrackingDocumentControllerDocs {
             )
     )
     ResponseEntity<ApiResponse> uploadDocument(
-            @Parameter(
-                    description = "File to upload",
-                    required = true,
-                    content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)
-            )
-            MultipartFile file,
-
-            @Parameter(
-                    description = "Tracking ID to associate the document with",
-                    required = true,
-                    example = "1"
-            )
-            Long trackingId,
-
-            @Parameter(
-                    description = "Step ID within the tracking process",
-                    required = true,
-                    example = "5"
-            )
-            Long stepId,
-
-            @Parameter(
-                    description = "Type of document being uploaded",
-                    schema = @Schema(implementation = DocumentType.class),
-                    example = "CURRICULUM_PROPOSAL"
-            )
-            DocumentType documentType,
-
-            @Parameter(
-                    description = "Optional description of the document",
-                    example = "Initial curriculum proposal for Advanced Computer Science program"
-            )
-            String description,
-
-            String authorizationHeader
+            @RequestParam("file") @NotNull MultipartFile file,
+            @RequestParam("trackingId") @NotNull Long trackingId,
+            @RequestParam("stepId") @NotNull Long stepId,
+            @RequestParam(value = "documentType", defaultValue = "OTHER") DocumentType documentType,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestHeader("Authorization") String authorizationHeader
     );
 
     @Operation(
@@ -148,22 +123,12 @@ public interface TrackingDocumentControllerDocs {
             )
     )
     ResponseEntity<ApiResponse> uploadDocuments(
-            @Parameter(
-                    description = "List of files to upload",
-                    required = true
-            )
-            List<MultipartFile> files,
-
-            Long trackingId,
-            Long stepId,
-            DocumentType documentType,
-
-            @Parameter(
-                    description = "Optional descriptions for each file (must match file count)"
-            )
-            List<String> descriptions,
-
-            String authorizationHeader
+            @RequestParam("files") @NotNull List<MultipartFile> files,
+            @RequestParam("trackingId") @NotNull Long trackingId,
+            @RequestParam("stepId") @NotNull Long stepId,
+            @RequestParam(value = "documentType", defaultValue = "OTHER") DocumentType documentType,
+            @RequestParam(value = "descriptions", required = false) List<String> descriptions,
+            @RequestHeader("Authorization") String authorizationHeader
     );
 
     @Operation(
@@ -182,14 +147,7 @@ public interface TrackingDocumentControllerDocs {
             responseCode = "404",
             description = "Document not found"
     )
-    ResponseEntity<InputStreamResource> downloadDocument(
-            @Parameter(
-                    description = "Document ID to download",
-                    required = true,
-                    example = "1"
-            )
-            Long documentId
-    );
+    ResponseEntity<InputStreamResource> downloadDocument(@PathVariable Long documentId);
 
     @Operation(
             summary = "Get document download URL",
@@ -218,13 +176,8 @@ public interface TrackingDocumentControllerDocs {
             )
     )
     ResponseEntity<ApiResponse> getDocumentDownloadUrl(
-            Long documentId,
-
-            @Parameter(
-                    description = "URL expiration time in minutes",
-                    example = "60"
-            )
-            int expirationMinutes
+            @PathVariable Long documentId,
+            @RequestParam(defaultValue = "60") int expirationMinutes
     );
 
     @Operation(
@@ -239,14 +192,7 @@ public interface TrackingDocumentControllerDocs {
                     schema = @Schema(implementation = TrackingDocumentDto.class)
             )
     )
-    ResponseEntity<ApiResponse> getDocumentMetadata(
-            @Parameter(
-                    description = "Document ID",
-                    required = true,
-                    example = "1"
-            )
-            Long documentId
-    );
+    ResponseEntity<ApiResponse> getDocumentMetadata(@PathVariable Long documentId);
 
     @Operation(
             summary = "Get documents by tracking",
@@ -260,29 +206,18 @@ public interface TrackingDocumentControllerDocs {
                     schema = @Schema(type = "array", implementation = TrackingDocumentDto.class)
             )
     )
-    ResponseEntity<ApiResponse> getDocumentsByTracking(
-            @Parameter(
-                    description = "Tracking ID",
-                    required = true,
-                    example = "1"
-            )
-            Long trackingId
-    );
+    ResponseEntity<ApiResponse> getDocumentsByTracking(@PathVariable Long trackingId);
 
     @Operation(
             summary = "Get documents by step",
             description = "Retrieves all documents associated with a specific tracking step"
     )
-    ResponseEntity<ApiResponse> getDocumentsByStep(
-            @Parameter(
-                    description = "Step ID",
-                    required = true,
-                    example = "5"
-            )
-            Long stepId
+    ResponseEntity<ApiResponse> getDocumentsByStep(@PathVariable Long stepId);
+
+    ResponseEntity<ApiResponse> getDocumentsByType(
+            @PathVariable Long trackingId,
+            @PathVariable DocumentType documentType
     );
-
-
 
     @Operation(
             summary = "Search documents",
@@ -315,18 +250,8 @@ public interface TrackingDocumentControllerDocs {
             )
     )
     ResponseEntity<ApiResponse> searchDocuments(
-            @Parameter(
-                    description = "Search term to match against document names and descriptions",
-                    required = true,
-                    example = "curriculum proposal"
-            )
-            String searchTerm,
-
-            @Parameter(
-                    description = "Optional tracking ID to limit search scope",
-                    example = "1"
-            )
-            Long trackingId
+            @RequestParam String searchTerm,
+            @RequestParam(required = false) Long trackingId
     );
 
     @Operation(
@@ -339,18 +264,9 @@ public interface TrackingDocumentControllerDocs {
             description = "Document metadata updated successfully"
     )
     ResponseEntity<ApiResponse> updateDocumentMetadata(
-            Long documentId,
-
-            @Parameter(
-                    description = "New description for the document"
-            )
-            String description,
-
-            @Parameter(
-                    description = "New document type",
-                    schema = @Schema(implementation = DocumentType.class)
-            )
-            DocumentType documentType
+            @PathVariable Long documentId,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) DocumentType documentType
     );
 
     @Operation(
@@ -380,14 +296,7 @@ public interface TrackingDocumentControllerDocs {
                     )
             )
     )
-    ResponseEntity<ApiResponse> deleteDocument(
-            @Parameter(
-                    description = "Document ID to delete",
-                    required = true,
-                    example = "1"
-            )
-            Long documentId
-    );
+    ResponseEntity<ApiResponse> deleteDocument(@PathVariable Long documentId);
 
     @Operation(
             summary = "Create document version",
@@ -402,25 +311,10 @@ public interface TrackingDocumentControllerDocs {
             description = "Document version created successfully"
     )
     ResponseEntity<ApiResponse> createDocumentVersion(
-            @Parameter(
-                    description = "Original document ID to create a new version of",
-                    required = true,
-                    example = "1"
-            )
-            Long documentId,
-
-            @Parameter(
-                    description = "New file version",
-                    required = true
-            )
-            MultipartFile newFile,
-
-            @Parameter(
-                    description = "Optional description for the new version"
-            )
-            String description,
-
-            String authorizationHeader
+            @PathVariable Long documentId,
+            @RequestParam("file") @NotNull MultipartFile newFile,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestHeader("Authorization") String authorizationHeader
     );
 
     @Operation(
@@ -436,19 +330,8 @@ public interface TrackingDocumentControllerDocs {
             )
     )
     ResponseEntity<ApiResponse> getDocumentVersions(
-            @Parameter(
-                    description = "Document name to get versions for",
-                    required = true,
-                    example = "curriculum_proposal_2025"
-            )
-            String documentName,
-
-            @Parameter(
-                    description = "Tracking ID",
-                    required = true,
-                    example = "1"
-            )
-            Long trackingId
+            @RequestParam String documentName,
+            @RequestParam Long trackingId
     );
 
     @Operation(
@@ -492,11 +375,7 @@ public interface TrackingDocumentControllerDocs {
             )
     )
     ResponseEntity<ApiResponse> getStorageStatistics(
-            @Parameter(
-                    description = "Optional tracking ID to filter statistics",
-                    example = "1"
-            )
-            Long trackingId
+            @RequestParam(required = false) Long trackingId
     );
 
     @Operation(
@@ -512,28 +391,10 @@ public interface TrackingDocumentControllerDocs {
             description = "Document copied successfully"
     )
     ResponseEntity<ApiResponse> copyDocument(
-            @Parameter(
-                    description = "Source document ID to copy",
-                    required = true,
-                    example = "1"
-            )
-            Long documentId,
-
-            @Parameter(
-                    description = "Target tracking ID",
-                    required = true,
-                    example = "2"
-            )
-            Long targetTrackingId,
-
-            @Parameter(
-                    description = "Target step ID",
-                    required = true,
-                    example = "8"
-            )
-            Long targetStepId,
-
-            String authorizationHeader
+            @PathVariable Long documentId,
+            @RequestParam Long targetTrackingId,
+            @RequestParam Long targetStepId,
+            @RequestHeader("Authorization") String authorizationHeader
     );
 
     @Operation(
@@ -566,38 +427,10 @@ public interface TrackingDocumentControllerDocs {
             )
     )
     ResponseEntity<ApiResponse> getDocumentUploadUrl(
-            @Parameter(
-                    description = "Tracking ID",
-                    required = true,
-                    example = "1"
-            )
-            Long trackingId,
-
-            @Parameter(
-                    description = "Step ID",
-                    required = true,
-                    example = "5"
-            )
-            Long stepId,
-
-            @Parameter(
-                    description = "File name",
-                    required = true,
-                    example = "curriculum_proposal.pdf"
-            )
-            String fileName,
-
-            @Parameter(
-                    description = "Content type of the file",
-                    required = true,
-                    example = "application/pdf"
-            )
-            String contentType,
-
-            @Parameter(
-                    description = "URL expiration time in minutes",
-                    example = "60"
-            )
-            int expirationMinutes
+            @RequestParam Long trackingId,
+            @RequestParam Long stepId,
+            @RequestParam String fileName,
+            @RequestParam String contentType,
+            @RequestParam(defaultValue = "60") int expirationMinutes
     );
 }

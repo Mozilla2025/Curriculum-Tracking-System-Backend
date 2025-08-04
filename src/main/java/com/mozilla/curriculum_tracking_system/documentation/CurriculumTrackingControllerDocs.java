@@ -1,6 +1,5 @@
 package com.mozilla.curriculum_tracking_system.documentation;
 
-
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingDetailDto;
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingPageResponse;
 import com.mozilla.curriculum_tracking_system.dto.tracking.InitiateTrackingRequest;
@@ -17,9 +16,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 /**
  * Documentation interface for CurriculumTrackingController
@@ -92,42 +95,8 @@ public interface CurriculumTrackingControllerDocs {
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Authentication required")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Insufficient permissions")
     ResponseEntity<ApiResponse> initiateTracking(
-            @RequestBody(
-                    description = "Tracking initiation request with curriculum details and supporting documents",
-                    required = true,
-                    content = @Content(
-                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
-                            schema = @Schema(implementation = InitiateTrackingRequest.class),
-                            examples = @ExampleObject(
-                                    name = "Ideation Tracking Request",
-                                    description = "Example request for initiating new curriculum idea tracking",
-                                    value = """
-                    {
-                      "schoolId": 1,
-                      "departmentId": 2,
-                      "academicLevelId": 3,
-                      "proposedCurriculumName": "Advanced Computer Science",
-                      "proposedCurriculumCode": "ADVCS",
-                      "proposedDurationSemesters": 8,
-                      "curriculumDescription": "Advanced curriculum covering AI, ML, and emerging technologies",
-                      "proposedEffectiveDate": "2025-09-01T00:00:00",
-                      "proposedExpiryDate": "2030-08-31T23:59:59",
-                      "initialNotes": "Initial proposal based on industry requirements",
-                      "expectedCompletionDate": "2025-12-31T23:59:59",
-                      "documents": ["curriculum_proposal.pdf", "supporting_docs.docx"]
-                    }
-                    """
-                            )
-                    )
-            )
-            InitiateTrackingRequest request,
-
-            @Parameter(
-                    description = "JWT authentication token",
-                    required = true,
-                    example = "Bearer eyJhbGciOiJIUzI1NiJ9..."
-            )
-            String authorizationHeader
+            @Valid @ModelAttribute InitiateTrackingRequest request,
+            @RequestHeader("Authorization") String authorizationHeader
     );
 
     @Operation(
@@ -153,28 +122,8 @@ public interface CurriculumTrackingControllerDocs {
             )
     )
     ResponseEntity<ApiResponse> performTrackingAction(
-            @RequestBody(
-                    description = "Action request with tracking ID, action type, and optional supporting documents",
-                    required = true,
-                    content = @Content(
-                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
-                            schema = @Schema(implementation = TrackingActionRequest.class),
-                            examples = @ExampleObject(
-                                    name = "Approve Action",
-                                    value = """
-                    {
-                      "trackingId": 1,
-                      "action": "APPROVE",
-                      "notes": "Curriculum meets all requirements for next stage",
-                      "isMilestone": true,
-                      "documents": ["approval_certificate.pdf"]
-                    }
-                    """
-                            )
-                    )
-            )
-            TrackingActionRequest request,
-            String authorizationHeader
+            @Valid @ModelAttribute TrackingActionRequest request,
+            @RequestHeader("Authorization") String authorizationHeader
     );
 
     @Operation(
@@ -190,12 +139,7 @@ public interface CurriculumTrackingControllerDocs {
             )
     )
     ResponseEntity<ApiResponse> getTrackingById(
-            @Parameter(
-                    description = "Tracking database ID",
-                    required = true,
-                    example = "1"
-            )
-            Long trackingId
+            @PathVariable Long trackingId
     );
 
     @Operation(
@@ -203,12 +147,7 @@ public interface CurriculumTrackingControllerDocs {
             description = "Retrieves tracking information using the human-readable tracking ID (e.g., CURR-CS-2025-001)"
     )
     ResponseEntity<ApiResponse> getTrackingByTrackingId(
-            @Parameter(
-                    description = "Human-readable tracking ID",
-                    required = true,
-                    example = "CURR-CS-2025-001"
-            )
-            String trackingId
+            @PathVariable String trackingId
     );
 
     @Operation(
@@ -224,10 +163,6 @@ public interface CurriculumTrackingControllerDocs {
             )
     )
     ResponseEntity<ApiResponse> getAllTrackings(
-            @Parameter(
-                    description = "Pagination parameters (page, size, sort)",
-                    example = "page=0&size=20&sort=updatedAt,desc"
-            )
             Pageable pageable
     );
 
@@ -244,26 +179,7 @@ public interface CurriculumTrackingControllerDocs {
             """
     )
     ResponseEntity<ApiResponse> searchTrackings(
-            @RequestBody(
-                    description = "Search criteria for filtering trackings",
-                    content = @Content(
-                            schema = @Schema(implementation = TrackingSearchCriteria.class),
-                            examples = @ExampleObject(
-                                    name = "Search Example",
-                                    value = """
-                    {
-                      "status": "IN_PROGRESS",
-                      "currentStage": "REVIEW_APPROVAL",
-                      "schoolId": 1,
-                      "searchTerm": "computer science",
-                      "createdAfter": "2025-01-01T00:00:00",
-                      "isActive": true
-                    }
-                    """
-                            )
-                    )
-            )
-            TrackingSearchCriteria criteria,
+            @Valid @org.springframework.web.bind.annotation.RequestBody TrackingSearchCriteria criteria,
             Pageable pageable
     );
 
@@ -272,12 +188,7 @@ public interface CurriculumTrackingControllerDocs {
             description = "Retrieves trackings filtered by status (INITIATED, IN_PROGRESS, APPROVED, REJECTED, etc.)"
     )
     ResponseEntity<ApiResponse> getTrackingsByStatus(
-            @Parameter(
-                    description = "Tracking status to filter by",
-                    required = true,
-                    schema = @Schema(implementation = TrackingStatus.class)
-            )
-            TrackingStatus status,
+            @PathVariable TrackingStatus status,
             Pageable pageable
     );
 
@@ -286,12 +197,7 @@ public interface CurriculumTrackingControllerDocs {
             description = "Retrieves trackings filtered by current stage (IDEATION, REVIEW_APPROVAL, SCHOOL_BOARD, etc.)"
     )
     ResponseEntity<ApiResponse> getTrackingsByStage(
-            @Parameter(
-                    description = "Tracking stage to filter by",
-                    required = true,
-                    schema = @Schema(implementation = TrackingStage.class)
-            )
-            TrackingStage stage,
+            @PathVariable TrackingStage stage,
             Pageable pageable
     );
 
@@ -302,7 +208,7 @@ public interface CurriculumTrackingControllerDocs {
     )
     ResponseEntity<ApiResponse> getMyAssignedTrackings(
             Pageable pageable,
-            String authorizationHeader
+            @RequestHeader("Authorization") String authorizationHeader
     );
 
     @Operation(
@@ -312,7 +218,7 @@ public interface CurriculumTrackingControllerDocs {
     )
     ResponseEntity<ApiResponse> getMyInitiatedTrackings(
             Pageable pageable,
-            String authorizationHeader
+            @RequestHeader("Authorization") String authorizationHeader
     );
 
     @Operation(
@@ -321,9 +227,9 @@ public interface CurriculumTrackingControllerDocs {
             security = @SecurityRequirement(name = "Bearer Authentication")
     )
     ResponseEntity<ApiResponse> updateTracking(
-            Long trackingId,
-            InitiateTrackingRequest request,
-            String authorizationHeader
+            @PathVariable Long trackingId,
+            @Valid @ModelAttribute InitiateTrackingRequest request,
+            @RequestHeader("Authorization") String authorizationHeader
     );
 
     @Operation(
@@ -332,9 +238,9 @@ public interface CurriculumTrackingControllerDocs {
             security = @SecurityRequirement(name = "Bearer Authentication")
     )
     ResponseEntity<ApiResponse> assignTracking(
-            Long trackingId,
-            Long assigneeId,
-            String authorizationHeader
+            @PathVariable Long trackingId,
+            @PathVariable Long assigneeId,
+            @RequestHeader("Authorization") String authorizationHeader
     );
 
     @Operation(
@@ -343,8 +249,8 @@ public interface CurriculumTrackingControllerDocs {
             security = @SecurityRequirement(name = "Bearer Authentication")
     )
     ResponseEntity<ApiResponse> hasTrackingPermission(
-            Long trackingId,
-            String authorizationHeader
+            @PathVariable Long trackingId,
+            @RequestHeader("Authorization") String authorizationHeader
     );
 
     @Operation(
@@ -353,8 +259,8 @@ public interface CurriculumTrackingControllerDocs {
             security = @SecurityRequirement(name = "Bearer Authentication")
     )
     ResponseEntity<ApiResponse> validateStageTransition(
-            Long trackingId,
-            TrackingStage targetStage,
-            String authorizationHeader
+            @PathVariable Long trackingId,
+            @PathVariable TrackingStage targetStage,
+            @RequestHeader("Authorization") String authorizationHeader
     );
 }
