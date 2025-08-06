@@ -2,6 +2,8 @@ package com.mozilla.curriculum_tracking_system.enums;
 
 public enum NotificationType {
     CURRICULUM_DUE_FOR_REVIEW,
+    CURRICULUM_DELAY_REMINDER,
+    CURRICULUM_OVERDUE,
     REVIEW_SUBMITTED,
     REVIEW_APPROVED,
     REVIEW_REJECTED,

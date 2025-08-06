@@ -234,26 +234,6 @@ public class CurriculumService implements ICurriculumService {
             @CacheEvict(value = CacheConstants.CURRICULUMS_SEARCH, allEntries = true),
             @CacheEvict(value = CacheConstants.CURRICULUM_STATS, allEntries = true)
     })
-    public CurriculumDto putCurriculumDueForReview(Long id, String authToken) {
-        validateAdminAccess(authToken);
-
-        Curriculum curriculum = findCurriculumById(id);
-        curriculum.putDueForReview();
-
-        Curriculum savedCurriculum = curriculumRepository.save(curriculum);
-        return curriculumMapper.toDto(savedCurriculum);
-    }
-
-    @Override
-    @Caching(evict = {
-            @CacheEvict(value = CacheConstants.CURRICULUM_BY_ID, key = "#id"),
-            @CacheEvict(value = CacheConstants.CURRICULUMS, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_SCHOOL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_DEPARTMENT, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_ACADEMIC_LEVEL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_SEARCH, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUM_STATS, allEntries = true)
-    })
     public CurriculumDto toggleCurriculumStatus(Long id, String authToken) {
         validateAdminAccess(authToken);
 

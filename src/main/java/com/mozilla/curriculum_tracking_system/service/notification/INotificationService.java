@@ -2,16 +2,28 @@ package com.mozilla.curriculum_tracking_system.service.notification;
 
 import com.mozilla.curriculum_tracking_system.dto.notification.NotificationDto;
 import com.mozilla.curriculum_tracking_system.entity.CurriculumReview;
+import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
+import com.mozilla.curriculum_tracking_system.model.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface INotificationService {
 
     // Core notification operations
     NotificationDto createNotification(NotificationDto notificationDto);
+
+    NotificationDto sendCurriculumReviewDueNotification(User schoolDean,
+                                                        Curriculum curriculum);
+
+    void sendBulkCurriculumNotifications(List<String> recipientEmails,
+                                         String subject,
+                                         String templateName,
+                                         Map<String, Object> summaryData);
+
     void markAsRead(Long notificationId);
     void markMultipleAsRead(List<Long> notificationIds);
     void markAllAsRead(Long userId);

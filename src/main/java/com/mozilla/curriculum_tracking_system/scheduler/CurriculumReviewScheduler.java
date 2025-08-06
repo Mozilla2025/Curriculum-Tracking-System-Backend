@@ -1,16 +1,26 @@
 package com.university.curriculumtracking.scheduler;
 
+import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingDto;
+import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingPageResponse;
 import com.mozilla.curriculum_tracking_system.dto.user.UserResponse;
+import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;
 import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStatus;
+import com.mozilla.curriculum_tracking_system.mapper.CurriculumTrackingMapper;
 import com.mozilla.curriculum_tracking_system.mapper.UserMapper;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
+import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
 import com.mozilla.curriculum_tracking_system.model.user.User;
+import com.mozilla.curriculum_tracking_system.repository.tracking.CurriculumTrackingRepository;
+import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import com.mozilla.curriculum_tracking_system.service.curriculum.CurriculumService;
 import com.mozilla.curriculum_tracking_system.service.notification.NotificationService;
 import com.mozilla.curriculum_tracking_system.service.school.ISchoolService;
+import com.mozilla.curriculum_tracking_system.service.tracking.CurriculumTrackingService;
 import com.mozilla.curriculum_tracking_system.service.user.UserManagementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -25,10 +36,14 @@ import java.util.List;
 public class CurriculumReviewScheduler {
 
     private final CurriculumService curriculumService;
+    private final CurriculumTrackingService curriculumTrackingService;
+    private final CurriculumTrackingRepository trackingRepository;
+    private final CurriculumTrackingMapper trackingMapper;
     private final NotificationService notificationService;
     private final UserManagementService userService;
     private final ISchoolService schoolService;
     private final UserMapper userMapper;
+    private final UserRepository userRepository;
 
     /**
      * Check for curricula due for review - runs daily at 9 AM
@@ -50,7 +65,6 @@ public class CurriculumReviewScheduler {
 
                     // Check if curriculum is due for review
                     if (yearsElapsed >= reviewCycle) {
-
                         User schoolDean = userMapper.toEntity(schoolService.getSchoolDean(curriculum.getSchool().getId()));
                         String deanEmail = userService.getDeanEmailBySchool(curriculum.getSchool().getId());
 
@@ -85,37 +99,91 @@ public class CurriculumReviewScheduler {
         log.info("Starting scheduled check for delayed curricula");
 
         try {
-            List<Curriculum> inProgressCurricula = curriculumService.getCurriculaInProgress();
-            LocalDate today = LocalDate.now();
+            List<CurriculumTracking> underReviewEntities = trackingRepository
+                    .findByStatusAndIsActive(CurriculumTrackingStatus.UNDER_REVIEW, true);
 
-            for (Curriculum curriculum : inProgressCurricula) {
-                LocalDate lastActionDate = curriculum.getLastActionDate();
+            // Convert to DTOs using the mapper with user emails
+            List<CurriculumTrackingDto> underReviewTrackings = underReviewEntities.stream()
+                    .map(tracking -> {
+                        User initiatorUser = userRepository.findById(tracking.getInitiatedBy()).orElse(null);
+                        User currentAssigneeUser = tracking.getCurrentAssignee() != null ?
+                                userRepository.findById(tracking.getCurrentAssignee()).orElse(null) : null;
+
+                        return trackingMapper.toDtoWithUserEmails(
+                                tracking,
+                                initiatorUser != null ? initiatorUser.getEmail() : null,
+                                currentAssigneeUser != null ? currentAssigneeUser.getEmail() : null
+                        );
+                    })
+                    .toList();
+
+            LocalDateTime today = LocalDateTime.now();
+
+            for (CurriculumTrackingDto trackingDto : underReviewTrackings) {
+                LocalDateTime lastActionDate = trackingDto.getLastUpdatedAt();
 
                 if (lastActionDate != null) {
-                    long daysDelayed = ChronoUnit.DAYS.between(lastActionDate, today);
+                    long daysDelayed = ChronoUnit.DAYS.between(lastActionDate.toLocalDate(), today.toLocalDate());
 
                     // Send reminder if curriculum has been sitting for more than 7 days
                     if (daysDelayed > 7) {
-                        String responsibleEmail = getCurrentResponsibleEmail(curriculum);
+                        String responsibleEmail = trackingDto.getCurrentAssigneeEmail();
 
                         if (responsibleEmail != null) {
                             notificationService.sendDelayReminderNotification(
                                     responsibleEmail,
-                                    curriculum.getName(),
-                                    curriculum.getCode(),
-                                    curriculum.getCurrentStage(),
+                                    trackingDto.getCurriculumName(),
+                                    trackingDto.getCurriculumCode(),
+                                    trackingDto.getCurrentStage(),
                                     (int) daysDelayed
                             );
 
-                            log.info("Delay reminder sent for curriculum: {}", curriculum.getCode());
+                            log.info("Delay reminder sent for curriculum: {}", trackingDto.getCurriculumCode());
                         }
                     }
                 }
             }
 
-            log.info("Completed scheduled check for delayed curricula");
+            log.info("Completed scheduled check for delayed curricula. Processed {} tracking records.", underReviewTrackings.size());
         } catch (Exception e) {
             log.error("Error during scheduled delayed curricula check", e);
+        }
+    }
+
+    /**
+     * Check specifically for overdue curricula
+     */
+    @Scheduled(cron = "0 30 10 * * MON") // Runs 30 minutes after the delayed check
+    public void checkOverdueCurricula() {
+        log.info("Starting scheduled check for overdue curricula");
+
+        try {
+            List<CurriculumTrackingDto> overdueTrackings = curriculumTrackingService.getOverdueTrackings();
+
+            for (CurriculumTrackingDto trackingDto : overdueTrackings) {
+                String responsibleEmail = trackingDto.getCurrentAssigneeEmail();
+
+                if (responsibleEmail != null) {
+                    // Calculate how many days overdue
+                    LocalDateTime estimatedCompletion = trackingDto.getEstimatedCompletionDate();
+                    long daysOverdue = estimatedCompletion != null ?
+                            ChronoUnit.DAYS.between(estimatedCompletion.toLocalDate(), LocalDate.now()) : 0;
+
+                    notificationService.sendOverdueReminderNotification(
+                            responsibleEmail,
+                            trackingDto.getCurriculumName(),
+                            trackingDto.getCurriculumCode(),
+                            trackingDto.getCurrentStage(),
+                            (int) daysOverdue
+                    );
+
+                    log.info("Overdue notification sent for curriculum: {}", trackingDto.getCurriculumCode());
+                }
+            }
+
+            log.info("Completed scheduled check for overdue curricula");
+        } catch (Exception e) {
+            log.error("Error during scheduled overdue curricula check", e);
         }
     }
 
@@ -149,25 +217,4 @@ public class CurriculumReviewScheduler {
         }
     }
 
-    /**
-     * Get the email of the person currently responsible for the curriculum
-     */
-    private String getCurrentResponsibleEmail(Curriculum curriculum) {
-        String currentStage = curriculum.getCurrentStage();
-
-        switch (currentStage) {
-            case "SCHOOL_BOARD":
-                return userService.getSchoolBoardEmailByDepartment(curriculum.getDepartmentId());
-            case "DEAN_COMMITTEE":
-                return userService.getDeanEmailByDepartment(curriculum.getDepartmentId());
-            case "SENATE":
-                return userService.getSenateEmail();
-            case "QUALITY_ASSURANCE":
-                return userService.getQAEmail();
-            case "VICE_CHANCELLOR":
-                return userService.getViceChancellorEmail();
-            default:
-                return null;
-        }
-    }
 }

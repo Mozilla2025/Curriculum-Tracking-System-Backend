@@ -1,6 +1,7 @@
 package com.mozilla.curriculum_tracking_system.service.notification;
 
 import com.mozilla.curriculum_tracking_system.dto.notification.NotificationDto;
+import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;
 import com.mozilla.curriculum_tracking_system.enums.NotificationPriority;
 import com.mozilla.curriculum_tracking_system.enums.NotificationType;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
@@ -19,12 +20,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class NotificationService implements INotificationService, ICurriculumTrackingNotificationService {
+ public class NotificationService implements INotificationService, ICurriculumTrackingNotificationService {
 
     private final NotificationRepository notificationRepository;
     private final IEmailService emailService;
@@ -80,66 +82,99 @@ public class NotificationService implements INotificationService, ICurriculumTra
         return createNotification(notificationDto);
     }
 
+    /**
+     * Send delay reminder notification for curriculum tracking
+     */
     @Override
     @Transactional
-    public NotificationDto createReminderNotification(Curriculum curriculum, String recipientEmail, String recipientName) {
-        long daysUntilDue = java.time.temporal.ChronoUnit.DAYS.between(
-                LocalDateTime.now().toLocalDate(),
-                curriculum.getExpiryDate().toLocalDate()
-        );
+    public NotificationDto sendDelayReminderNotification(String responsibleEmail,
+                                                         String curriculumName,
+                                                         String curriculumCode,
+                                                         CurriculumTrackingStage currentStage,
+                                                         int daysDelayed) {
 
         NotificationDto notificationDto = NotificationDto.builder()
-                .title("Curriculum Review Reminder")
-                .message("Reminder: The curriculum '" + curriculum.getName() +
-                        "' is due for review in " + daysUntilDue + " days.")
-                .type(NotificationType.REMINDER)
-                .priority(daysUntilDue <= 7 ? NotificationPriority.HIGH :
-                        NotificationPriority.MEDIUM)
-                .curriculumId(curriculum.getId())
-                .curriculumName(curriculum.getName())
-                .recipientEmail(recipientEmail)
-                .recipientName(recipientName)
+                .title("Curriculum Review Delayed - Action Required")
+                .message(String.format("The curriculum '%s (%s)' has been delayed for %d days at the %s stage. " +
+                                "Please take immediate action to proceed with the review process.",
+                        curriculumName,
+                        curriculumCode,
+                        daysDelayed,
+                        currentStage.getDisplayName()))
+                .type(NotificationType.CURRICULUM_DELAY_REMINDER)
+                .priority(daysDelayed > 14 ? NotificationPriority.URGENT :
+                        daysDelayed > 7 ? NotificationPriority.HIGH : NotificationPriority.MEDIUM)
+                .email(responsibleEmail)
+                .curriculumName(curriculumName)
+                .scheduledFor(LocalDateTime.now())
                 .build();
 
+        log.info("Sending delay reminder notification for curriculum: {} to {}", curriculumCode, responsibleEmail);
         return createNotification(notificationDto);
     }
 
+    /**
+     * Send overdue notification for curriculum tracking
+     */
     @Override
     @Transactional
-    public NotificationDto sendOverdueReminderNotification(CurriculumTracking curriculumTracking,
-                                                           User user) {
+    public NotificationDto sendOverdueReminderNotification(String responsibleEmail,
+                                                   String curriculumName,
+                                                   String curriculumCode,
+                                                   CurriculumTrackingStage currentStage,
+                                                   int daysOverdue) {
 
         NotificationDto notificationDto = NotificationDto.builder()
-                .title("Curriculum Review Due")
-                .message("The curriculum '" + curriculumTracking.getCurriculum() +
-                        "' is due for review. Please begin the review process.")
-                .type(NotificationType.CURRICULUM_DUE_FOR_REVIEW)
-                .priority(NotificationPriority.HIGH)
-                .userId(user.getId())
-                .email(user.getEmail())
-                .username(user.getUsername())
-                .build();
-
-        return createNotification(notificationDto);
-    }
-
-    @Override
-    @Transactional
-    public NotificationDto createOverdueNotification(Curriculum curriculum,
-                                                     String recipientEmail, String recipientName) {
-        NotificationDto notificationDto = NotificationDto.builder()
-                .title("OVERDUE: Curriculum Review")
-                .message("The curriculum '" + curriculum.getName() +
-                        "' is overdue for review by " + curriculum.getDaysOverdue() + " days.")
-                .type(NotificationType.REVIEW_OVERDUE)
+                .title("OVERDUE: Curriculum Review - Urgent Action Required")
+                .message(String.format("URGENT: The curriculum '%s (%s)' is overdue by %d days at the %s stage. " +
+                                "This curriculum has exceeded its estimated completion date. " +
+                                "Please prioritize this review immediately.",
+                        curriculumName,
+                        curriculumCode,
+                        daysOverdue,
+                        currentStage.getDisplayName()))
+                .type(NotificationType.CURRICULUM_OVERDUE)
                 .priority(NotificationPriority.URGENT)
-                .curriculumId(curriculum.getId())
-                .curriculumName(curriculum.getName())
-                .recipientEmail(recipientEmail)
-                .recipientName(recipientName)
+                .email(responsibleEmail)
+                .curriculumName(curriculumName)
+                .scheduledFor(LocalDateTime.now())
                 .build();
 
+        log.warn("Sending overdue notification for curriculum: {} to {} - {} days overdue",
+                curriculumCode, responsibleEmail, daysOverdue);
         return createNotification(notificationDto);
+    }
+
+    /**
+     * Send bulk curriculum notifications (for weekly summary)
+     */
+    @Override
+    @Transactional
+    public void sendBulkCurriculumNotifications(List<String> recipientEmails,
+                                                String subject,
+                                                String templateName,
+                                                Map<String, Object> summaryData) {
+
+        for (String email : recipientEmails) {
+            try {
+                NotificationDto notificationDto = NotificationDto.builder()
+                        .title(subject)
+                        .message(buildSummaryMessage(summaryData))
+                        .type(NotificationType.WEEKLY_SUMMARY)
+                        .priority(NotificationPriority.LOW)
+                        .email(email)
+                        .scheduledFor(LocalDateTime.now())
+                        .build();
+
+                createNotification(notificationDto);
+                log.debug("Weekly summary notification sent to: {}", email);
+
+            } catch (Exception e) {
+                log.error("Failed to send weekly summary notification to: {}", email, e);
+            }
+        }
+
+        log.info("Bulk curriculum notifications sent to {} recipients", recipientEmails.size());
     }
 
     @Override
@@ -311,11 +346,6 @@ public class NotificationService implements INotificationService, ICurriculumTra
 
     @Override
     public void sendAssignmentNotification(Long trackingId, Long assigneeId) {
-
-    }
-
-    @Override
-    public void sendOverdueReminderNotification(Long trackingId) {
 
     }
 
