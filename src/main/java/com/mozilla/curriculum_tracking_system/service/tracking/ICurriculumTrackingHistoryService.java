@@ -4,6 +4,7 @@ import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingHis
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTrackingHistory;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -65,6 +66,8 @@ public interface ICurriculumTrackingHistoryService {
      * Get overdue history items
      */
     List<CurriculumTrackingHistoryDto> getOverdueHistoryItems();
+
+    long countActionsBetween(LocalDateTime startDate, LocalDateTime endDate);
 
     void flushHistoryChanges();
 

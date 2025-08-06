@@ -177,6 +177,22 @@ import java.util.Optional;
         log.info("Bulk curriculum notifications sent to {} recipients", recipientEmails.size());
     }
 
+    /**
+     * Build summary message from data map
+     */
+    private String buildSummaryMessage(Map<String, Object> summaryData) {
+        StringBuilder message = new StringBuilder("Weekly Curriculum Tracking Summary:\n\n");
+
+        summaryData.forEach((key, value) -> {
+            String formattedKey = key.replaceAll("([A-Z])", " $1")
+                    .replaceAll("^.", String.valueOf(key.charAt(0)).toUpperCase());
+            message.append(String.format("%s: %s\n", formattedKey, value));
+        });
+
+        message.append("\nPlease review the detailed report in the curriculum tracking system.");
+        return message.toString();
+    }
+
     @Override
     @Transactional
     public NotificationDto createStatusUpdateNotification(Curriculum curriculum,

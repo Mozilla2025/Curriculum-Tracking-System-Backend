@@ -1,5 +1,6 @@
 package com.mozilla.curriculum_tracking_system.repository.tracking;
 
+import com.mozilla.curriculum_tracking_system.dto.tracking.StageActivityDto;
 import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;
 import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStatus;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
@@ -134,5 +135,23 @@ public interface CurriculumTrackingRepository extends JpaRepository<CurriculumTr
     @Query("UPDATE CurriculumTracking ct SET ct.isActive = false, ct.lastUpdatedAt = CURRENT_TIMESTAMP " +
             "WHERE ct.id = :id")
     void softDeleteById(@Param("id") Long id);
+
+    // In CurriculumTrackingRepository
+    @Query("SELECT COUNT(ct) FROM CurriculumTracking ct WHERE ct.completedAt BETWEEN :startDate AND :endDate")
+    long countCompletedBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT COUNT(ct) FROM CurriculumTracking ct WHERE ct.initiatedAt BETWEEN :startDate AND :endDate")
+    long countCreatedBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT COUNT(ct) FROM CurriculumTracking ct WHERE ct.isActive = true")
+    long countActiveTrackings();
+
+    @Query("SELECT h.stage, COUNT(h) " +
+            "FROM CurriculumTrackingHistory h " +
+            "WHERE h.actionDate BETWEEN :startDate AND :endDate " +
+            "GROUP BY h.stage " +
+            "ORDER BY COUNT(h) DESC")
+    List<Object[]> findMostActiveStagesAsArray(@Param("startDate") LocalDateTime startDate,
+                                               @Param("endDate") LocalDateTime endDate);
 }
 

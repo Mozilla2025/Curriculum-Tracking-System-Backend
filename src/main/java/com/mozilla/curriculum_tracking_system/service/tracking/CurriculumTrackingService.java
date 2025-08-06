@@ -13,6 +13,7 @@ import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTrackingHistory;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.curriculum.CurriculumRepository;
+import com.mozilla.curriculum_tracking_system.repository.tracking.CurriculumTrackingHistoryRepository;
 import com.mozilla.curriculum_tracking_system.repository.tracking.CurriculumTrackingRepository;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
@@ -27,7 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,6 +40,7 @@ import java.util.stream.Collectors;
 public class CurriculumTrackingService implements ICurriculumTrackingService {
 
     private final CurriculumTrackingRepository curriculumTrackingRepository;
+    private final CurriculumTrackingHistoryRepository curriculumTrackingHistoryRepository;
     private final CurriculumRepository curriculumRepository;
     private final UserRepository userRepository;
     private final CurriculumTrackingMapper trackingMapper;
@@ -590,5 +594,145 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         };
 
         return actions;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> generateWeeklySummary() {
+        log.info("Generating weekly curriculum tracking summary");
+
+        try {
+            // Calculate date range for the past week
+            LocalDateTime endDate = LocalDateTime.now();
+            LocalDateTime startDate = endDate.minusDays(7);
+
+            Map<String, Object> summaryData = new HashMap<>();
+
+            // Basic statistics
+            CurriculumTrackingStatsDto stats = getCurriculumTrackingStats();
+            summaryData.put("totalTracked", stats.getTotalTracked());
+            summaryData.put("completedThisWeek", getCompletedThisWeek(startDate, endDate));
+            summaryData.put("averageCompletionTime", stats.getAverageCompletionTimeInDays());
+
+            // Status breakdown
+            Map<String, Long> statusBreakdown = new HashMap<>();
+            statusBreakdown.put("underReview", stats.getUnderReview());
+            statusBreakdown.put("accredited", stats.getAccredited());
+            statusBreakdown.put("approvedByCue", stats.getApprovedByCue());
+            statusBreakdown.put("minorRevamp", stats.getMinorRevamp());
+            statusBreakdown.put("majorRevamp", stats.getMajorRevamp());
+            summaryData.put("statusBreakdown", statusBreakdown);
+
+            // Stage distribution
+            Map<String, Long> stageDistribution = new HashMap<>();
+            stageDistribution.put("schoolBoard", stats.getAtSchoolBoard());
+            stageDistribution.put("deanCommittee", stats.getAtDeanCommittee());
+            stageDistribution.put("senate", stats.getAtSenate());
+            stageDistribution.put("qaInternalReview", stats.getAtQaInternalReview());
+            stageDistribution.put("viceChancellorReview", stats.getAtViceChancellorReview());
+            stageDistribution.put("cueExternalReview", stats.getAtCueExternalReview());
+            stageDistribution.put("completed", stats.getCompleted());
+            summaryData.put("stageDistribution", stageDistribution);
+
+            // Activity metrics
+            summaryData.put("newTrackingsThisWeek", getNewTrackingsThisWeek(startDate, endDate));
+            summaryData.put("actionsPerformedThisWeek", getActionsPerformedThisWeek(startDate, endDate));
+            summaryData.put("overdueItems", stats.getOverdueTasks());
+
+            // Overdue and expiring soon items
+            List<CurriculumTrackingDto> overdueTrackings = getOverdueTrackings();
+            List<CurriculumTrackingDto> expiringSoon = getExpiringSoonTrackings(7);
+
+            summaryData.put("overdueTrackings", overdueTrackings.stream()
+                    .map(this::createTrackingSummary)
+                    .collect(Collectors.toList()));
+
+            summaryData.put("expiringSoon", expiringSoon.stream()
+                    .map(this::createTrackingSummary)
+                    .collect(Collectors.toList()));
+
+            // Top active stages (stages with most activity this week)
+            summaryData.put("mostActiveStages", getMostActiveStages(startDate, endDate));
+
+            // Performance indicators
+            summaryData.put("weeklyPerformance", calculateWeeklyPerformance(startDate, endDate));
+
+            // Summary metadata
+            summaryData.put("reportGeneratedAt", endDate);
+            summaryData.put("reportPeriod", Map.of(
+                    "startDate", startDate,
+                    "endDate", endDate
+            ));
+
+            log.info("Weekly summary generated successfully with {} total tracked items", stats.getTotalTracked());
+            return summaryData;
+
+        } catch (Exception e) {
+            log.error("Error generating weekly curriculum tracking summary", e);
+            throw new RuntimeException("Failed to generate weekly summary", e);
+        }
+    }
+
+// Helper methods for the weekly summary
+
+    private long getCompletedThisWeek(LocalDateTime startDate, LocalDateTime endDate) {
+        return curriculumTrackingRepository.countCompletedBetween(startDate, endDate);
+    }
+
+    private long getNewTrackingsThisWeek(LocalDateTime startDate, LocalDateTime endDate) {
+        return curriculumTrackingRepository.countCreatedBetween(startDate, endDate);
+    }
+
+    private long getActionsPerformedThisWeek(LocalDateTime startDate, LocalDateTime endDate) {
+        return historyService.countActionsBetween(startDate, endDate);
+    }
+
+    private List<Map<String, Object>> getMostActiveStages(LocalDateTime startDate, LocalDateTime endDate) {
+        // Use direct Object[] array from repository query
+        List<Object[]> stageActivity = curriculumTrackingRepository.findMostActiveStagesAsArray(startDate, endDate);
+
+        return stageActivity.stream()
+                .map(result -> {
+                    CurriculumTrackingStage stage = (CurriculumTrackingStage) result[0];
+                    Long actionCount = (Long) result[1];
+
+                    Map<String, Object> stageMap = new HashMap<>();
+                    stageMap.put("stage", stage.name());
+                    stageMap.put("actionCount", actionCount);
+                    stageMap.put("stageName", stage.getDisplayName()); // Assuming your enum has this method
+                    return stageMap;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private Map<String, Object> calculateWeeklyPerformance(LocalDateTime startDate, LocalDateTime endDate) {
+        Map<String, Object> performance = new HashMap<>();
+
+        // Calculate completion rate
+        long totalActive = curriculumTrackingRepository.countActiveTrackings();
+        long completedThisWeek = getCompletedThisWeek(startDate, endDate);
+        double completionRate = totalActive > 0 ? (double) completedThisWeek / totalActive * 100 : 0.0;
+
+        performance.put("weeklyCompletionRate", Math.round(completionRate * 100.0) / 100.0);
+        performance.put("actionsPerDay", getActionsPerformedThisWeek(startDate, endDate) / 7.0);
+        performance.put("averageDaysInCurrentStage", calculateAverageDaysInCurrentStage());
+
+        return performance;
+    }
+
+    private double calculateAverageDaysInCurrentStage() {
+        return curriculumTrackingHistoryRepository.findAverageDaysInCurrentStage();
+    }
+
+    private Map<String, Object> createTrackingSummary(CurriculumTrackingDto tracking) {
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("id", tracking.getId());
+        summary.put("curriculumName", tracking.getCurriculumName());
+        summary.put("currentStage", tracking.getCurrentStage());
+        summary.put("status", tracking.getStatus());
+        summary.put("estimatedCompletionDate", tracking.getEstimatedCompletionDate());
+        summary.put("currentAssigneeEmail", tracking.getCurrentAssigneeEmail());
+        summary.put("daysInCurrentStage", calculateAverageDaysInCurrentStage());
+        return summary;
     }
 }

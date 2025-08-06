@@ -191,6 +191,12 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
         }
     }
 
+    @Override
+    public long countActionsBetween(LocalDateTime startDate, LocalDateTime endDate) {
+        log.debug("Counting actions between {} and {}", startDate, endDate);
+        return historyRepository.countByActionDateBetween(startDate, endDate);
+    }
+
     private boolean isForwardMovement(CurriculumTrackingStage fromStage, CurriculumTrackingStage toStage) {
 
         // Define stage order for forward movement detection

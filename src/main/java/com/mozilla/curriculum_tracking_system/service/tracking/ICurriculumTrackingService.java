@@ -7,6 +7,7 @@ import com.mozilla.curriculum_tracking_system.enums.TrackingActionType;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service interface for managing curriculum tracking lifecycle
@@ -114,5 +115,10 @@ public interface ICurriculumTrackingService {
      */
     void validateTrackingAction(CurriculumTrackingActionRequest request, String authToken);
 
+    /**
+     * Generates a comprehensive weekly summary of curriculum tracking activities
+     * @return Map containing summary data for the past week
+     */
+    Map<String, Object> generateWeeklySummary();
 
 }

@@ -1,4 +1,4 @@
-package com.university.curriculumtracking.scheduler;
+package com.mozilla.curriculum_tracking_system.scheduler;
 
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingDto;
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingPageResponse;
@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -196,11 +197,14 @@ public class CurriculumReviewScheduler {
 
         try {
             // Get QA admin emails
-            List<String> qaAdminEmails = userService.getQAAdminEmails();
+            List<UserResponse> qaAdmins = userService.getUsersByRole("QA_ADMIN");
+            List<String> qaAdminEmails = qaAdmins.stream()
+                    .map(UserResponse::getEmail)
+                    .collect(Collectors.toList());
 
             if (!qaAdminEmails.isEmpty()) {
                 // Generate summary data
-                Map<String, Object> summaryData = curriculumService.generateWeeklySummary();
+                Map<String, Object> summaryData = curriculumTrackingService. generateWeeklySummary();
 
                 // Send bulk email to QA admins
                 notificationService.sendBulkCurriculumNotifications(

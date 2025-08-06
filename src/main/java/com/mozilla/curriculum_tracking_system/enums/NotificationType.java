@@ -10,6 +10,7 @@ public enum NotificationType {
     REVIEW_NEEDS_REVISION, //should it be major and minor revamp
     REVIEW_OVERDUE,
 
+    WEEKLY_SUMMARY,
     BULK_NOTIFICATION,
     SYSTEM_NOTIFICATION
 }

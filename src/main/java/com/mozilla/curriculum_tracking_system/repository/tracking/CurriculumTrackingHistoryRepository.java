@@ -71,4 +71,27 @@ public interface CurriculumTrackingHistoryRepository extends JpaRepository<Curri
             "WHERE LOWER(cth.comments) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
             "ORDER BY cth.actionDate DESC")
     List<CurriculumTrackingHistory> searchInComments(@Param("searchTerm") String searchTerm);
+
+    /**
+     * Count the number of tracking actions performed between the specified dates
+     * @param startDate Start date of the period (inclusive)
+     * @param endDate End date of the period (inclusive)
+     * @return Number of actions performed in the date range
+     */
+    long countByActionDateBetween(LocalDateTime startDate, LocalDateTime endDate);
+
+    @Query("""
+    SELECT AVG(FUNCTION('DATEDIFF', CURRENT_DATE, h.actionDate))
+    FROM CurriculumTrackingHistory h
+    WHERE h.curriculumTracking.isActive = true
+      AND h.id IN (
+          SELECT MAX(h2.id)
+          FROM CurriculumTrackingHistory h2
+          WHERE h2.curriculumTracking.isActive = true
+          GROUP BY h2.curriculumTracking.id
+      )
+""")
+    Double findAverageDaysInCurrentStage();
+
+
 }
