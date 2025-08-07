@@ -58,6 +58,9 @@ public class CurriculumTracking {
     @Column(name = "estimated_completion_date")
     private LocalDateTime estimatedCompletionDate;
 
+    @Column(name = "stage_updated_at")
+    private LocalDateTime stageUpdatedAt;
+
     @Column(columnDefinition = "TEXT")
     private String notes; // General notes about the tracking process
 

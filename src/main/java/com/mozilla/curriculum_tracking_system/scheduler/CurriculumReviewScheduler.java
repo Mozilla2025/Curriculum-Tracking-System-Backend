@@ -1,14 +1,10 @@
 package com.mozilla.curriculum_tracking_system.scheduler;
 
 import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingDto;
-import com.mozilla.curriculum_tracking_system.dto.tracking.CurriculumTrackingPageResponse;
 import com.mozilla.curriculum_tracking_system.dto.user.UserResponse;
-import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;
-import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStatus;
 import com.mozilla.curriculum_tracking_system.mapper.CurriculumTrackingMapper;
 import com.mozilla.curriculum_tracking_system.mapper.UserMapper;
 import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
-import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.tracking.CurriculumTrackingRepository;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
@@ -20,8 +16,7 @@ import com.mozilla.curriculum_tracking_system.service.tracking.ICurriculumTracki
 import com.mozilla.curriculum_tracking_system.service.user.UserManagementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -46,7 +41,7 @@ public class CurriculumReviewScheduler {
     private final UserManagementService userService;
     private final ISchoolService schoolService;
     private final UserMapper userMapper;
-    private final UserRepository userRepository;
+    private final CurriculumTrackingDto curriculumTrackingDto;
 
     /**
      * Check for curricula due for review - runs daily at 9 AM
@@ -72,7 +67,7 @@ public class CurriculumReviewScheduler {
                         String deanEmail = userService.getDeanEmailBySchool(curriculum.getSchool().getId());
 
                         if (schoolDean != null) {
-                            notificationService.sendCurriculumReviewDueNotification(
+                            trackingNotificationService.sendCurriculumReviewDueNotification(
                                     schoolDean,
                                     curriculum
                             );
@@ -91,65 +86,6 @@ public class CurriculumReviewScheduler {
             log.info("Completed scheduled check for curricula due for review");
         } catch (Exception e) {
             log.error("Error during scheduled curriculum review check", e);
-        }
-    }
-
-    /**
-     * Check for delayed curricula - runs every Monday at 10 AM
-     */
-    @Scheduled(cron = "0 0 10 * * MON")
-    public void checkDelayedCurricula() {
-        log.info("Starting scheduled check for delayed curricula");
-
-        try {
-            List<CurriculumTracking> underReviewEntities = trackingRepository
-                    .findByStatusAndIsActive(CurriculumTrackingStatus.UNDER_REVIEW, true);
-
-            // Convert to DTOs using the mapper with user emails
-            List<CurriculumTrackingDto> underReviewTrackings = underReviewEntities.stream()
-                    .map(tracking -> {
-                        User initiatorUser = userRepository.findById(tracking.getInitiatedBy()).orElse(null);
-                        User currentAssigneeUser = tracking.getCurrentAssignee() != null ?
-                                userRepository.findById(tracking.getCurrentAssignee()).orElse(null) : null;
-
-                        return trackingMapper.toDtoWithUserEmails(
-                                tracking,
-                                initiatorUser != null ? initiatorUser.getEmail() : null,
-                                currentAssigneeUser != null ? currentAssigneeUser.getEmail() : null
-                        );
-                    })
-                    .toList();
-
-            LocalDateTime today = LocalDateTime.now();
-
-            for (CurriculumTrackingDto trackingDto : underReviewTrackings) {
-                LocalDateTime lastActionDate = trackingDto.getLastUpdatedAt();
-
-                if (lastActionDate != null) {
-                    long daysDelayed = ChronoUnit.DAYS.between(lastActionDate.toLocalDate(), today.toLocalDate());
-
-                    // Send reminder if curriculum has been sitting for more than 7 days
-                    if (daysDelayed > 7) {
-                        String responsibleEmail = trackingDto.getCurrentAssigneeEmail();
-
-                        if (responsibleEmail != null) {
-                            notificationService.sendDelayReminderNotification(
-                                    responsibleEmail,
-                                    trackingDto.getCurriculumName(),
-                                    trackingDto.getCurriculumCode(),
-                                    trackingDto.getCurrentStage(),
-                                    (int) daysDelayed
-                            );
-
-                            log.info("Delay reminder sent for curriculum: {}", trackingDto.getCurriculumCode());
-                        }
-                    }
-                }
-            }
-
-            log.info("Completed scheduled check for delayed curricula. Processed {} tracking records.", underReviewTrackings.size());
-        } catch (Exception e) {
-            log.error("Error during scheduled delayed curricula check", e);
         }
     }
 
@@ -199,5 +135,75 @@ public class CurriculumReviewScheduler {
             log.error("Error sending weekly summary report", e);
         }
     }
+
+    /**
+     * Process scheduled notifications every 15 minutes
+     */
+    @Scheduled(fixedRate = 900000) // 15 minutes
+    public void processScheduledNotifications() {
+        try {
+            notificationService.processScheduledNotifications();
+        } catch (Exception e) {
+            log.error("Failed to process scheduled notifications", e);
+        }
+    }
+
+    /**
+     * Clean up old notifications monthly (1st of each month at 2:00 AM)
+     */
+    @Scheduled(cron = "0 0 2 1 * ?")
+    public void cleanupOldNotifications() {
+        log.info("Starting monthly notification cleanup");
+
+        try {
+            notificationService.cleanupOldNotifications(90); // Remove read notifications older than 90 days
+            log.info("Monthly notification cleanup completed successfully");
+        } catch (Exception e) {
+            log.error("Failed to cleanup old notifications", e);
+        }
+    }
+
+    /**
+     * Send deadline approaching reminders every day at 8 AM
+     */
+    @Scheduled(cron = "0 0 8 * * *")
+    public void sendDeadlineApproachingReminders() {
+        log.info("Starting deadline approaching reminders task");
+
+        try {
+            List<CurriculumTrackingDto> expiringSoon = curriculumTrackingService.getExpiringSoonTrackings(3);
+
+            LocalDateTime today = LocalDateTime.now();
+
+            for (CurriculumTrackingDto tracking : expiringSoon) {
+
+                LocalDateTime lastActionDate = tracking.getLastUpdatedAt();
+
+                if (lastActionDate != null) {
+                    long days = ChronoUnit.DAYS.between(tracking.getEstimatedCompletionDate().toLocalDate(), today.toLocalDate());
+
+                    // Send reminder if the 'expiry date' is in less than 7 days
+                    if (days < 7) {
+
+                        if (tracking.getCurrentAssigneeEmail() != null) {
+                            notificationService.sendDelayReminderNotification(
+                                    tracking.getCurrentAssigneeEmail(),
+                                    tracking.getCurriculumName(),
+                                    tracking.getCurriculumCode(),
+                                    tracking.getCurrentStage(),
+                                    (int) days
+                            );
+                        }
+                    }
+                }
+            }
+
+            log.info("Deadline approaching reminders sent for {} trackings", expiringSoon.size());
+        }catch (Exception e) {
+            log.error("Failed to send deadline approaching reminders", e);
+        }
+    }
+
+
 
 }

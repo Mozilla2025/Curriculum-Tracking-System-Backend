@@ -17,6 +17,7 @@ import com.mozilla.curriculum_tracking_system.repository.tracking.CurriculumTrac
 import com.mozilla.curriculum_tracking_system.repository.tracking.CurriculumTrackingRepository;
 import com.mozilla.curriculum_tracking_system.repository.user.UserRepository;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
+import com.mozilla.curriculum_tracking_system.service.notification.NotificationService;
 import com.mozilla.curriculum_tracking_system.util.CurriculumTrackingSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,7 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
 
     private final CurriculumTrackingRepository curriculumTrackingRepository;
     private final CurriculumTrackingHistoryRepository curriculumTrackingHistoryRepository;
+    private final ICurriculumTrackingNotificationService trackingNotificationService;
     private final CurriculumRepository curriculumRepository;
     private final UserRepository userRepository;
     private final CurriculumTrackingMapper trackingMapper;
@@ -138,6 +140,12 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
 
         updateTrackingForAction(tracking, request, toStage, assigneeUser != null ? assigneeUser.getId() : null);
         CurriculumTracking updatedTracking = curriculumTrackingRepository.saveAndFlush(tracking);
+
+        try {
+            sendActionNotifications(request, updatedTracking, assigneeUser);
+        } catch (Exception e) {
+            log.warn("Failed to send notifications for tracking action: {}", e.getMessage());
+        }
 
         // Create history entry
         CurriculumTrackingHistory historyEntry = CurriculumTrackingHistory.builder()
@@ -385,6 +393,12 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         CurriculumTracking updatedTracking = curriculumTrackingRepository.save(tracking);
 
         User initiatorUser = findUserById(updatedTracking.getInitiatedBy());
+
+        try {
+            trackingNotificationService.sendAssignmentNotification(trackingId, userId);
+        } catch (Exception e) {
+            log.warn("Failed to send assignment notification: {}", e.getMessage());
+        }
 
         log.info("Successfully assigned tracking {} to user {}", trackingId, userId);
         return trackingMapper.toDtoWithUserEmails(
@@ -734,5 +748,34 @@ public class CurriculumTrackingService implements ICurriculumTrackingService {
         summary.put("currentAssigneeEmail", tracking.getCurrentAssigneeEmail());
         summary.put("daysInCurrentStage", calculateAverageDaysInCurrentStage());
         return summary;
+    }
+
+    private void sendActionNotifications(CurriculumTrackingActionRequest request,
+                                         CurriculumTracking tracking,
+                                         User assigneeUser) {
+
+        switch (request.getActionType()) {
+            case SUBMITTED:
+                if (assigneeUser != null) {
+                    trackingNotificationService.sendSubmissionNotification(tracking.getId(), assigneeUser.getId());
+                }
+                break;
+
+            case APPROVED:
+                trackingNotificationService.sendApprovalNotification(tracking.getId());
+                break;
+
+            case SENT_BACK:
+                trackingNotificationService.sendSentBackNotification(tracking.getId(), request.getComments());
+                break;
+
+            case ACCREDITED:
+                trackingNotificationService.sendAccreditationNotification(tracking.getId());
+                break;
+
+            default:
+                // For other actions, you might want different notification logic
+                break;
+        }
     }
 }

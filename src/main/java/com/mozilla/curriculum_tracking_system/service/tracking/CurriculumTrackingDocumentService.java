@@ -42,6 +42,7 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
     private final CurriculumTrackingMapper trackingMapper;
     private final IFirebaseStorageService firebaseStorageService;
     private final IAuthenticationService authenticationService;
+    private final ICurriculumTrackingNotificationService trackingNotificationService;
 
     @Override
     public DocumentUploadResponse uploadDocument(DocumentUploadRequest request, String authToken) {
@@ -81,6 +82,13 @@ public class CurriculumTrackingDocumentService implements ICurriculumTrackingDoc
                     .build();
 
             CurriculumTrackingDocument savedDocument = documentRepository.save(document);
+
+            try {
+                Long trackingId = savedDocument.getTrackingHistory().getCurriculumTracking().getId();
+                trackingNotificationService.sendDocumentUploadNotification(trackingId, savedDocument.getDocumentName());
+            } catch (Exception e) {
+                log.warn("Failed to send document upload notification: {}", e.getMessage());
+            }
 
             log.info("Successfully uploaded document with ID: {} for tracking history: {}",
                     savedDocument.getId(), request.getTrackingHistoryId());

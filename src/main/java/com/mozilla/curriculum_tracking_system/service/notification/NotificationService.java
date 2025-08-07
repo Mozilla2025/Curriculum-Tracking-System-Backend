@@ -61,32 +61,12 @@ import java.util.Optional;
         return convertToDto(notification);
     }
 
-    @Override
-    @Transactional
-    public NotificationDto sendCurriculumReviewDueNotification(User schoolDean,
-                                                         Curriculum curriculum) {
-
-        NotificationDto notificationDto = NotificationDto.builder()
-                .title("Curriculum Review Due")
-                .message("The curriculum '" + curriculum.getName() +
-                        "' is due for review. Please begin the review process.")
-                .type(NotificationType.CURRICULUM_DUE_FOR_REVIEW)
-                .priority(NotificationPriority.HIGH)
-                .curriculumName(curriculum.getName())
-                .userId(schoolDean.getId())
-                .email(schoolDean.getEmail())
-                .username(schoolDean.getUsername())
-                .build();
-
-        return createNotification(notificationDto);
-    }
-
     /**
      * Send delay reminder notification for curriculum tracking
      */
     @Override
     @Transactional
-    public NotificationDto sendDelayReminderNotification(String responsibleEmail,
+    public void sendDelayReminderNotification(String responsibleEmail,
                                                          String curriculumName,
                                                          String curriculumCode,
                                                          CurriculumTrackingStage currentStage,
@@ -109,7 +89,7 @@ import java.util.Optional;
                 .build();
 
         log.info("Sending delay reminder notification for curriculum: {} to {}", curriculumCode, responsibleEmail);
-        return createNotification(notificationDto);
+       createNotification(notificationDto);
     }
 
     /**
@@ -142,59 +122,6 @@ import java.util.Optional;
         }
 
         log.info("Bulk curriculum notifications sent to {} recipients", recipientEmails.size());
-    }
-
-    /**
-     * Build summary message from data map
-     */
-    private String buildSummaryMessage(Map<String, Object> summaryData) {
-        StringBuilder message = new StringBuilder("Weekly Curriculum Tracking Summary:\n\n");
-
-        summaryData.forEach((key, value) -> {
-            String formattedKey = key.replaceAll("([A-Z])", " $1")
-                    .replaceAll("^.", String.valueOf(key.charAt(0)).toUpperCase());
-            message.append(String.format("%s: %s\n", formattedKey, value));
-        });
-
-        message.append("\nPlease review the detailed report in the curriculum tracking system.");
-        return message.toString();
-    }
-
-    @Override
-    @Transactional
-    public NotificationDto createStatusUpdateNotification(Curriculum curriculum,
-                                                          String recipientEmail, String recipientName,
-                                                          String statusUpdate) {
-        NotificationDto notificationDto = NotificationDto.builder()
-                .title("Curriculum Status Update")
-                .message("Status update for '" + curriculum.getName() + "': " + statusUpdate)
-                .type(NotificationType.REVIEW_SUBMITTED)
-                .priority(NotificationPriority.MEDIUM)
-                .recipientEmail(recipientEmail)
-                .recipientName(recipientName)
-                .build();
-
-        return createNotification(notificationDto);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<NotificationDto> getUserNotifications(Long userId, Pageable pageable) {
-        Page<Notification> notifications = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(userId, pageable);
-        return notifications.map(this::convertToDto);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<NotificationDto> getUnreadNotifications(Long userId, Pageable pageable) {
-        Page<Notification> notifications = notificationRepository.findByRecipientIdAndIsReadFalseOrderByCreatedAtDesc(userId, pageable);
-        return notifications.map(this::convertToDto);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long getUnreadNotificationCount(Long userId) {
-        return notificationRepository.countByRecipientIdAndIsReadFalse(userId);
     }
 
     @Override
@@ -239,6 +166,41 @@ import java.util.Optional;
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<NotificationDto> getUserNotifications(Long userId, Pageable pageable) {
+        Page<Notification> notifications = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(userId, pageable);
+        return notifications.map(this::convertToDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<NotificationDto> getUnreadNotifications(Long userId, Pageable pageable) {
+        Page<Notification> notifications = notificationRepository.findByRecipientIdAndIsReadFalseOrderByCreatedAtDesc(userId, pageable);
+        return notifications.map(this::convertToDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long getUnreadNotificationCount(Long userId) {
+        return notificationRepository.countByRecipientIdAndIsReadFalse(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<NotificationDto> getNotificationsByCurriculum(Long curriculumId) {
+        List<Notification> notifications = notificationRepository.findByCurriculumIdOrderByCreatedAtDesc(curriculumId);
+        return notifications.stream().map(this::convertToDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<NotificationDto> getHighPriorityNotifications(Long userId) {
+        List<Notification> notifications = notificationRepository
+                .findHighPriorityNotifications(userId, NotificationPriority.HIGH);
+        return notifications.stream().map(this::convertToDto).toList();
+    }
+
+    @Override
     @Transactional
     public void processScheduledNotifications() {
         List<Notification> scheduledNotifications = notificationRepository
@@ -263,19 +225,20 @@ import java.util.Optional;
         notificationRepository.deleteOldReadNotifications(cutoffDate);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<NotificationDto> getNotificationsByCurriculum(Long curriculumId) {
-        List<Notification> notifications = notificationRepository.findByCurriculumIdOrderByCreatedAtDesc(curriculumId);
-        return notifications.stream().map(this::convertToDto).toList();
-    }
+    /**
+     * Build summary message from data map
+     */
+    private String buildSummaryMessage(Map<String, Object> summaryData) {
+        StringBuilder message = new StringBuilder("Weekly Curriculum Tracking Summary:\n\n");
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<NotificationDto> getHighPriorityNotifications(Long userId) {
-        List<Notification> notifications = notificationRepository
-                .findHighPriorityNotifications(userId, NotificationPriority.HIGH);
-        return notifications.stream().map(this::convertToDto).toList();
+        summaryData.forEach((key, value) -> {
+            String formattedKey = key.replaceAll("([A-Z])", " $1")
+                    .replaceAll("^.", String.valueOf(key.charAt(0)).toUpperCase());
+            message.append(String.format("%s: %s\n", formattedKey, value));
+        });
+
+        message.append("\nPlease review the detailed report in the curriculum tracking system.");
+        return message.toString();
     }
 
     private void sendNotificationEmail(Notification notification) {
@@ -306,10 +269,5 @@ import java.util.Optional;
                 .build();
     }
 
-
-    @Override
-    public NotificationDto createStatusUpdateNotification(CurriculumReview curriculumReview, Long recipientId, String recipientEmail, String recipientName, String statusUpdate) {
-        return null;
-    }
 
 }

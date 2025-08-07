@@ -7,6 +7,7 @@ import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;
 import com.mozilla.curriculum_tracking_system.enums.NotificationPriority;
 import com.mozilla.curriculum_tracking_system.enums.NotificationType;
 import com.mozilla.curriculum_tracking_system.exception.ResourceNotFoundException;
+import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import com.mozilla.curriculum_tracking_system.model.notification.NotificationPreferences;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 import com.mozilla.curriculum_tracking_system.repository.notification.NotificationPreferencesRepository;
@@ -19,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -200,6 +200,26 @@ public class CurriculumTrackingNotificationService implements ICurriculumTrackin
         } catch (Exception e) {
             log.error("Failed to send assignment notification for tracking: {}", trackingId, e);
         }
+    }
+
+    @Override
+    @Transactional
+    public void sendCurriculumReviewDueNotification(User schoolDean,
+                                                               Curriculum curriculum) {
+
+        NotificationDto notificationDto = NotificationDto.builder()
+                .title("Curriculum Review Due")
+                .message("The curriculum '" + curriculum.getName() +
+                        "' is due for review. Please begin the review process.")
+                .type(NotificationType.CURRICULUM_DUE_FOR_REVIEW)
+                .priority(NotificationPriority.HIGH)
+                .curriculumName(curriculum.getName())
+                .userId(schoolDean.getId())
+                .email(schoolDean.getEmail())
+                .username(schoolDean.getUsername())
+                .build();
+
+        notificationService.createNotification(notificationDto);
     }
 
     @Override
@@ -421,7 +441,7 @@ public class CurriculumTrackingNotificationService implements ICurriculumTrackin
      */
     @Override
     @Transactional
-    public NotificationDto sendOverdueReminderNotification(String responsibleEmail,
+    public void sendOverdueReminderNotification(String responsibleEmail,
                                                            String curriculumName,
                                                            String curriculumCode,
                                                            CurriculumTrackingStage currentStage,
@@ -445,7 +465,7 @@ public class CurriculumTrackingNotificationService implements ICurriculumTrackin
 
         log.warn("Sending overdue notification for curriculum: {} to {} - {} days overdue",
                 curriculumCode, responsibleEmail, daysOverdue);
-        return notificationService.createNotification(notificationDto);
+        notificationService.createNotification(notificationDto);
     }
 
     // Helper methods

@@ -1,9 +1,8 @@
 package com.mozilla.curriculum_tracking_system.service.tracking;
 
-import com.mozilla.curriculum_tracking_system.dto.notification.NotificationDto;
 import com.mozilla.curriculum_tracking_system.dto.notification.NotificationPreferencesDto;
 import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;
-import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
+import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
 import com.mozilla.curriculum_tracking_system.model.user.User;
 
 /**
@@ -31,10 +30,12 @@ public interface ICurriculumTrackingNotificationService {
      */
     void sendAssignmentNotification(Long trackingId, Long assigneeId);
 
+    void sendCurriculumReviewDueNotification(User schoolDean,
+                                                        Curriculum curriculum);
     /**
      * Send overdue reminder notification
      */
-    NotificationDto sendOverdueReminderNotification(String responsibleEmail,
+    void sendOverdueReminderNotification(String responsibleEmail,
                                                     String curriculumName,
                                                     String curriculumCode,
                                                     CurriculumTrackingStage currentStage,

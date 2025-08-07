@@ -69,7 +69,6 @@ public class CurriculumTrackingHistory {
     @Column(name = "is_milestone")
     private boolean isMilestone = false; // Mark important stages
 
-
     @JsonIgnore
     @OneToMany(mappedBy = "trackingHistory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default

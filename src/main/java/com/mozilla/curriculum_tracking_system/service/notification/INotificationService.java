@@ -1,10 +1,7 @@
 package com.mozilla.curriculum_tracking_system.service.notification;
 
 import com.mozilla.curriculum_tracking_system.dto.notification.NotificationDto;
-import com.mozilla.curriculum_tracking_system.entity.CurriculumReview;
 import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;
-import com.mozilla.curriculum_tracking_system.model.curriculum.Curriculum;
-import com.mozilla.curriculum_tracking_system.model.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -16,8 +13,11 @@ public interface INotificationService {
     // Core notification operations
     NotificationDto createNotification(NotificationDto notificationDto);
 
-    NotificationDto sendCurriculumReviewDueNotification(User schoolDean,
-                                                        Curriculum curriculum);
+    void sendDelayReminderNotification(String responsibleEmail,
+                                                  String curriculumName,
+                                                  String curriculumCode,
+                                                  CurriculumTrackingStage currentStage,
+                                                  int daysDelayed);
 
     void sendBulkCurriculumNotifications(List<String> recipientEmails,
                                          String subject,
@@ -29,16 +29,6 @@ public interface INotificationService {
     void markAllAsRead(Long userId);
     void deleteNotification(Long notificationId);
 
-    // Curriculum-specific notifications
-    NotificationDto createCurriculumDueNotification(CurriculumReview curriculumReview,
-                                                    Long recipientId, String recipientEmail, String recipientName);
-    NotificationDto createReminderNotification(CurriculumReview curriculumReview,
-                                               Long recipientId, String recipientEmail, String recipientName);
-    NotificationDto createOverdueNotification(CurriculumReview curriculumReview,
-                                              Long recipientId, String recipientEmail, String recipientName);
-    NotificationDto createStatusUpdateNotification(CurriculumReview curriculumReview,
-                                                   Long recipientId, String recipientEmail, String recipientName,
-                                                   String statusUpdate);
 
     // Retrieval operations
     Page<NotificationDto> getUserNotifications(Long userId, Pageable pageable);
