@@ -10,6 +10,16 @@ public enum NotificationType {
     REVIEW_NEEDS_REVISION, //should it be major and minor revamp
     REVIEW_OVERDUE,
 
+    // Notification types for curriculum tracking
+    CURRICULUM_SUBMITTED,
+    CURRICULUM_APPROVED,
+    CURRICULUM_SENT_BACK,
+    CURRICULUM_ASSIGNMENT,
+    CURRICULUM_ACCREDITED,
+    DOCUMENT_UPLOADED,
+    REVAMP_REQUESTED,
+    STAGE_TRANSITION,
+
     WEEKLY_SUMMARY,
     BULK_NOTIFICATION,
     SYSTEM_NOTIFICATION

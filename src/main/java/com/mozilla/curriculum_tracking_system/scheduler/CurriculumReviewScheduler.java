@@ -16,6 +16,7 @@ import com.mozilla.curriculum_tracking_system.service.curriculum.CurriculumServi
 import com.mozilla.curriculum_tracking_system.service.notification.NotificationService;
 import com.mozilla.curriculum_tracking_system.service.school.ISchoolService;
 import com.mozilla.curriculum_tracking_system.service.tracking.CurriculumTrackingService;
+import com.mozilla.curriculum_tracking_system.service.tracking.ICurriculumTrackingNotificationService;
 import com.mozilla.curriculum_tracking_system.service.user.UserManagementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,7 @@ public class CurriculumReviewScheduler {
     private final CurriculumTrackingRepository trackingRepository;
     private final CurriculumTrackingMapper trackingMapper;
     private final NotificationService notificationService;
+    private final ICurriculumTrackingNotificationService trackingNotificationService;
     private final UserManagementService userService;
     private final ISchoolService schoolService;
     private final UserMapper userMapper;
@@ -152,39 +154,16 @@ public class CurriculumReviewScheduler {
     }
 
     /**
-     * Check specifically for overdue curricula
+     * Send daily overdue reminders at 9:00 AM
      */
-    @Scheduled(cron = "0 30 10 * * MON") // Runs 30 minutes after the delayed check
-    public void checkOverdueCurricula() {
-        log.info("Starting scheduled check for overdue curricula");
-
+    @Scheduled(cron = "0 0 9 * * MON-FRI")
+    public void sendDailyOverdueReminders() {
+        log.info("Starting daily overdue reminders job");
         try {
-            List<CurriculumTrackingDto> overdueTrackings = curriculumTrackingService.getOverdueTrackings();
-
-            for (CurriculumTrackingDto trackingDto : overdueTrackings) {
-                String responsibleEmail = trackingDto.getCurrentAssigneeEmail();
-
-                if (responsibleEmail != null) {
-                    // Calculate how many days overdue
-                    LocalDateTime estimatedCompletion = trackingDto.getEstimatedCompletionDate();
-                    long daysOverdue = estimatedCompletion != null ?
-                            ChronoUnit.DAYS.between(estimatedCompletion.toLocalDate(), LocalDate.now()) : 0;
-
-                    notificationService.sendOverdueReminderNotification(
-                            responsibleEmail,
-                            trackingDto.getCurriculumName(),
-                            trackingDto.getCurriculumCode(),
-                            trackingDto.getCurrentStage(),
-                            (int) daysOverdue
-                    );
-
-                    log.info("Overdue notification sent for curriculum: {}", trackingDto.getCurriculumCode());
-                }
-            }
-
-            log.info("Completed scheduled check for overdue curricula");
+            trackingNotificationService.sendOverdueReminders();
+            log.info("Daily overdue reminders completed successfully");
         } catch (Exception e) {
-            log.error("Error during scheduled overdue curricula check", e);
+            log.error("Failed to send daily overdue reminders", e);
         }
     }
 

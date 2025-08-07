@@ -3,3 +3,6 @@
                                                     String recipientEmail, String recipientName``` in the notification service
 * added field reviewCycleYears to Curriculum class
 * Created the getDeanEmailBySchool method in UserManagementService
+
+**Changes made**
+added QA_ADMIN role

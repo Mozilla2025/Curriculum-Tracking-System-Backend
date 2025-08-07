@@ -1,6 +1,7 @@
 package com.mozilla.curriculum_tracking_system.service.tracking;
 
 import com.mozilla.curriculum_tracking_system.dto.notification.NotificationDto;
+import com.mozilla.curriculum_tracking_system.dto.notification.NotificationPreferencesDto;
 import com.mozilla.curriculum_tracking_system.enums.CurriculumTrackingStage;
 import com.mozilla.curriculum_tracking_system.model.tracking.CurriculumTracking;
 import com.mozilla.curriculum_tracking_system.model.user.User;
@@ -31,15 +32,6 @@ public interface ICurriculumTrackingNotificationService {
     void sendAssignmentNotification(Long trackingId, Long assigneeId);
 
     /**
-     * Send delay reminder notification
-     */
-    NotificationDto sendDelayReminderNotification(String responsibleEmail,
-                                                  String curriculumName,
-                                                  String curriculumCode,
-                                                  CurriculumTrackingStage currentStage,
-                                                  int daysDelayed);
-
-    /**
      * Send overdue reminder notification
      */
     NotificationDto sendOverdueReminderNotification(String responsibleEmail,
@@ -47,7 +39,7 @@ public interface ICurriculumTrackingNotificationService {
                                                     String curriculumCode,
                                                     CurriculumTrackingStage currentStage,
                                                     int daysOverdue);
-    
+
     /**
      * Send bulk notifications for overdue items
      */
@@ -66,10 +58,10 @@ public interface ICurriculumTrackingNotificationService {
     /**
      * Get notification preferences for user
      */
-    Object getUserNotificationPreferences(Long userId);
+    NotificationPreferencesDto getUserNotificationPreferences(Long userId);
 
     /**
      * Update notification preferences for user
      */
-    void updateUserNotificationPreferences(Long userId, Object preferences);
+    void updateUserNotificationPreferences(Long userId, NotificationPreferencesDto preferences);
 }
