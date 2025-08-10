@@ -18,48 +18,37 @@ import java.util.List;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    // Find notifications by recipient
-    Page<Notification> findByRecipientIdOrderByCreatedAtDesc(Long recipientId, Pageable pageable);
+    // User-based queries
+    Page<Notification> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
-    // Find unread notifications
-    Page<Notification> findByRecipientIdAndIsReadFalseOrderByCreatedAtDesc(Long recipientId, Pageable pageable);
+    Page<Notification> findByUserIdAndIsReadFalseOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
-    // Count unread notifications
-    long countByRecipientIdAndIsReadFalse(Long recipientId);
+    List<Notification> findByUserIdAndIsReadFalse(Long userId);
 
-    // Find notifications by type and recipient
-    List<Notification> findByRecipientIdAndType(Long recipientId, NotificationType type);
+    long countByUserIdAndIsReadFalse(Long userId);
 
-    // Find notifications that need email sending
-    @Query("SELECT n FROM Notification n WHERE n.emailSent = false AND n.scheduledFor <= :currentTime")
-    List<Notification> findNotificationsToSendEmail(@Param("currentTime") LocalDateTime currentTime);
-
-    // Find notifications by curriculum
+    // Curriculum-based queries
     List<Notification> findByCurriculumIdOrderByCreatedAtDesc(Long curriculumId);
 
-    // Find high priority notifications
-    @Query("SELECT n FROM Notification n WHERE n.recipientId = :recipientId AND n.priority = :priority AND n.isRead = false")
-    List<Notification> findHighPriorityNotifications(@Param("recipientId") Long recipientId,
-                                                     @Param("priority") NotificationPriority priority);
+    // Priority-based queries
+    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND (n.priority = :priority1 OR n.priority = :priority2) ORDER BY n.createdAt DESC")
+    List<Notification> findHighPriorityNotifications(@Param("userId") Long userId,
+                                                     @Param("priority1") NotificationPriority priority1,
+                                                     @Param("priority2") NotificationPriority priority2);
 
-    // Mark notifications as read
+    // Scheduled notifications
+    @Query("SELECT n FROM Notification n WHERE n.scheduledFor <= :currentTime AND n.isEmailSent = false")
+    List<Notification> findNotificationsToSendEmail(@Param("currentTime") LocalDateTime currentTime);
+
+    // Cleanup operations
     @Modifying
-    @Query("UPDATE Notification n SET n.isRead = true, n.readAt = :readAt WHERE n.id IN :notificationIds")
-    void markAsRead(@Param("notificationIds") List<Long> notificationIds, @Param("readAt") LocalDateTime readAt);
+    @Query("DELETE FROM Notification n WHERE n.isRead = true AND n.createdAt < :cutoffDate")
+    int deleteOldReadNotifications(@Param("cutoffDate") LocalDateTime cutoffDate);
 
-    // Mark email as sent
-    @Modifying
-    @Query("UPDATE Notification n SET n.emailSent = true WHERE n.id = :notificationId")
-    void markEmailAsSent(@Param("notificationId") Long notificationId);
+    // Additional useful queries
+    @Query("SELECT COUNT(n) FROM Notification n WHERE n.user.id = :userId AND n.type = :type")
+    long countByUserIdAndType(@Param("userId") Long userId, @Param("type") String type);
 
-    // Find notifications by date range
-    @Query("SELECT n FROM Notification n WHERE n.recipientId = :recipientId AND n.createdAt BETWEEN :startDate AND :endDate")
-    List<Notification> findByRecipientAndDateRange(@Param("recipientId") Long recipientId,
-                                                   @Param("startDate") LocalDateTime startDate,
-                                                   @Param("endDate") LocalDateTime endDate);
-
-    // Delete old notifications (cleanup)
-    @Modifying
-    @Query("DELETE FROM Notification n WHERE n.createdAt < :cutoffDate AND n.isRead = true")
-    void deleteOldReadNotifications(@Param("cutoffDate") LocalDateTime cutoffDate);
+    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.createdAt >= :startDate ORDER BY n.createdAt DESC")
+    List<Notification> findRecentNotifications(@Param("userId") Long userId, @Param("startDate") LocalDateTime startDate);
 }

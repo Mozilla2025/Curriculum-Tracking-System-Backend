@@ -22,10 +22,14 @@ public class NotificationDto {
     private String message;
     private NotificationType type;
     private NotificationPriority priority;
+
+    // Recipient Information
     private Long userId;
     private String email;
     private String username;
-    private String curriculumId;
+
+    // Curriculum information
+    private Long curriculumId;
     private String curriculumName;
     private boolean isRead;
     private boolean isEmailSent;

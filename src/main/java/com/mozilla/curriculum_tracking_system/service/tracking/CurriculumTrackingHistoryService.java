@@ -192,6 +192,7 @@ public class CurriculumTrackingHistoryService implements ICurriculumTrackingHist
     }
 
     @Override
+    @Transactional(readOnly = true)
     public long countActionsBetween(LocalDateTime startDate, LocalDateTime endDate) {
         log.debug("Counting actions between {} and {}", startDate, endDate);
         return historyRepository.countByActionDateBetween(startDate, endDate);
