@@ -92,6 +92,16 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers(
+                                "/api/v1/schools/**",
+                                "/api/v1/users/curriculums/get-all",
+                                "/api/v1/users/curriculums/search",
+                                "/api/v1/users/curriculums/school/{schoolId}",
+                                "/api/v1/users/curriculums/department/{departmentId}",
+                                "/api/v1/users/curriculums/academic-level/{academicLevelId}",
+                                "/api/v1/user/departments/**"
+                        ).permitAll()
+
+                        .requestMatchers(
                                 "/api/v1/auth/register",
                                 "/api/v1/users/create",
                                 "/api/v1/users/assign-role",
