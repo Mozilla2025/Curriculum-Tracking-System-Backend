@@ -2,7 +2,7 @@ spring:
   application:
     name: curriculum-tracking-system
   config:
-    import: "optional:file:keys.properties"
+    import: "optional:classpath:keys.properties"
   datasource:
     url: ${db.url}
     username: ${db.username}
