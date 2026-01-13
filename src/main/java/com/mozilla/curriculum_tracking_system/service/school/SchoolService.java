@@ -45,7 +45,10 @@ public class SchoolService implements ISchoolService {
         return schoolMapper.mapToDto(school);
     }
 
-
+    @Override
+    public long getSchoolCount() {
+        return schoolRepository.count();
+    }
 }
 
 

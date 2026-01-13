@@ -9,4 +9,6 @@ public interface ISchoolService {
 
     SchoolDto getSchoolById(Long id);
 
+    long getSchoolCount();
+
 }

@@ -225,6 +225,11 @@ public class DepartmentService implements IDepartmentService {
     }
 
     @Override
+    public long getTotalDepartmentCount() {
+        return departmentRepository.count();
+    }
+
+    @Override
     @Cacheable(value = CacheConstants.DEPARTMENT_EXISTS,
             key = "@cacheKeyGenerator.generateSimpleKey(#departmentId)")
     public boolean existsById(Long departmentId) {

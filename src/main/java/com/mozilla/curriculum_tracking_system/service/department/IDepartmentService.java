@@ -27,4 +27,6 @@ public interface IDepartmentService {
     DepartmentDto updateDepartment(Long departmentId, UpdateDepartmentRequest request, String token);
 
     void deleteDepartment(Long departmentId, String token);
+
+    long getTotalDepartmentCount();
 }
