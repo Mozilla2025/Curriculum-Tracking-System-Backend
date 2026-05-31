@@ -2,29 +2,24 @@
 # =============================================================================
 #  Curriculum Tracking System — End-to-End Azure App Service Deployment
 # =============================================================================
-#  What this script does (in order):
-#    1.  Pre-flight checks  (az CLI, Java, Maven, Azure login, keys.properties)
-#    2.  Load all secrets from keys.properties
+#  Steps (in order):
+#    1.  Pre-flight checks  (az CLI, Java, ./mvnw, Azure login, keys.properties)
+#    2.  Load all values from keys.properties
 #    3.  Create Resource Group
-#    4.  Create Azure Key Vault + store every secret
-#    5.  Create App Service Plan (Linux, B1)
-#    6.  Create Java 17 Web App
-#    7.  Enable System-Assigned Managed Identity
-#    8.  Grant the identity "get/list" access to Key Vault
-#    9.  Configure App Settings wired to Key Vault references
-#    10. Set Java startup command
-#    11. Enable filesystem logging
-#    12. Maven build (clean package -DskipTests)
-#    13. Deploy JAR via Azure CLI
-#    14. Health-check poll with retry
-#    15. Print deployment summary + useful commands
+#    4.  Create App Service Plan (Linux, B1) — tries region fallback list
+#    5.  Create Java 17 Web App
+#    6.  Set all App Settings directly (env vars injected at runtime)
+#    7.  Set Java startup command + enable filesystem logging
+#    8.  Maven build  (./mvnw clean package -DskipTests)
+#    9.  Deploy JAR via  az webapp deploy
+#    10. Health-check poll with retry
+#    11. Print deployment summary + useful commands
 #
 #  Usage:
-#    ./deploy-azure.sh                 — full end-to-end deploy
-#    ./deploy-azure.sh --skip-build    — skip Maven build, deploy existing JAR
-#    ./deploy-azure.sh --skip-infra    — skip infra, only build + deploy JAR
-#    ./deploy-azure.sh --skip-secrets  — skip Key Vault secret writes (re-use existing)
-#    ./deploy-azure.sh --skip-build --skip-infra   — only (re-)deploy the JAR
+#    ./deploy-azure.sh                  — full end-to-end deploy
+#    ./deploy-azure.sh --skip-build     — skip Maven build, deploy existing JAR
+#    ./deploy-azure.sh --skip-infra     — skip infra, only build + deploy JAR
+#    ./deploy-azure.sh --skip-build --skip-infra  — (re-)deploy existing JAR only
 # =============================================================================
 
 set -euo pipefail
@@ -41,7 +36,7 @@ MAGENTA='\033[0;35m'
 WHITE='\033[1;37m'
 BOLD='\033[1m'
 DIM='\033[2m'
-NC='\033[0m'   # reset
+NC='\033[0m'
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  LOGGING HELPERS
@@ -68,21 +63,18 @@ step() {
   echo -e "\n${BOLD}${BLUE}[STEP ${_STEP}]${NC} ${BOLD}$1${NC}"
 }
 
-info()    { echo -e "    ${CYAN}→${NC}  $1"; }
-ok()      { echo -e "    ${GREEN}✔${NC}  $1"; }
-warn()    { echo -e "    ${YELLOW}⚠${NC}  $1"; }
-skip()    { echo -e "    ${DIM}↷  $1 — already exists, skipping${NC}"; }
-die()     { echo -e "\n    ${RED}✖  FATAL: $1${NC}\n"; exit 1; }
-kv_ref()  { echo -e "    ${DIM}↳  KV ref: $1${NC}"; }
-label()   {
+info()  { echo -e "    ${CYAN}→${NC}  $1"; }
+ok()    { echo -e "    ${GREEN}✔${NC}  $1"; }
+warn()  { echo -e "    ${YELLOW}⚠${NC}  $1"; }
+skip()  { echo -e "    ${DIM}↷  $1 — already exists, skipping${NC}"; }
+die()   { echo -e "\n    ${RED}✖  FATAL: $1${NC}\n"; exit 1; }
+label() {
   local k="$1"; local v="$2"
   printf "    ${WHITE}${BOLD}%-22s${NC}${CYAN}%s${NC}\n" "${k}:" "${v}"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  ╔══════════════════════════════════╗
-#  ║   CONFIGURATION — edit here     ║
-#  ╚══════════════════════════════════╝
+#  CONFIGURATION — edit these before running
 # ─────────────────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -90,32 +82,40 @@ KEYS_FILE="${SCRIPT_DIR}/keys.properties"
 
 # ── Azure resource names ──────────────────────────────────────────────────────
 RESOURCE_GROUP="curriculum-tracking-rg"
-LOCATION="eastus"
 
-# App Service (Web App name must be globally unique → becomes <name>.azurewebsites.net)
-APP_NAME="curriculum-tracking-api"
+# App Service Plan + Web App
+APP_NAME="curriculum-tracking-api"   # globally unique → <name>.azurewebsites.net
 APP_SERVICE_PLAN="curriculum-plan"
-SKU="B1"          # B1 ≈ $13/mo on student subscription. Change to F1 for free (cold-start caveat).
+SKU="B1"    # B1 ≈ $13/mo. Use F1 for free tier (cold-start caveat applies).
 
-# Key Vault (3-24 chars, globally unique, alphanumeric + hyphens only)
-KEY_VAULT_BASE="curriculum-kv"
-
-# Spring profile that maps to application-azure.yml
+# Spring profile that selects application-azure.yml
 SPRING_PROFILE="azure"
 
-# Path to built JAR (resolved after build)
+# JVM heap tuning for B1 (1.75 GB RAM): 512 MB min, 1.2 GB max leaves room for OS
+JAVA_OPTS="-Xms512m -Xmx1228m"
+
+# Ordered regions to try — Azure for Students restricts certain resource types
+# to specific regions. The first one that succeeds wins.
+REGION_CANDIDATES=("eastus" "eastus2" "westus2" "westus" "centralus" "northeurope" "westeurope" "southafricanorth")
+
+# Resolved at runtime
+APP_LOCATION=""
+
+# Maven wrapper / command (resolved in preflight)
+MVN=""
+
+# JAR path (resolved after build or glob)
+JAR_PATH=""
 JAR_GLOB="${SCRIPT_DIR}/target/curriculum-tracking-system-*.jar"
 
-# ── Flags ─────────────────────────────────────────────────────────────────────
+# ── CLI Flags ─────────────────────────────────────────────────────────────────
 SKIP_BUILD=false
 SKIP_INFRA=false
-SKIP_SECRETS=false
 
 for arg in "$@"; do
   case $arg in
-    --skip-build)   SKIP_BUILD=true   ;;
-    --skip-infra)   SKIP_INFRA=true   ;;
-    --skip-secrets) SKIP_SECRETS=true ;;
+    --skip-build) SKIP_BUILD=true ;;
+    --skip-infra) SKIP_INFRA=true ;;
   esac
 done
 
@@ -123,39 +123,44 @@ done
 #  UTILITIES
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Read a value from keys.properties (ignores comment lines)
+# Read a value from keys.properties (skips comment lines)
 prop() {
   grep -E "^${1}=" "${KEYS_FILE}" | head -1 | cut -d'=' -f2-
 }
 
-# Check whether an az command exits 0 (resource exists)
+# Return 0 if az command succeeds (resource exists), 1 otherwise
 az_exists() { "$@" &>/dev/null && return 0 || return 1; }
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  STEP 0 — PRE-FLIGHT CHECKS
+#  STEP 1 — PRE-FLIGHT CHECKS
 # ─────────────────────────────────────────────────────────────────────────────
 preflight() {
   section "PRE-FLIGHT CHECKS"
 
   step "Verifying required tools"
 
-  command -v az   &>/dev/null || die "Azure CLI not found. Install: https://aka.ms/installazurecli"
+  command -v az &>/dev/null || die "Azure CLI not found. Install: https://aka.ms/installazurecli"
   ok "az    $(az version --query '"azure-cli"' -o tsv)"
 
-  command -v mvn  &>/dev/null || die "Maven not found. Install Maven 3.8+ and retry."
-  ok "mvn   $(mvn --version 2>&1 | head -1 | sed 's/Apache Maven //')"
+  if [[ -x "${SCRIPT_DIR}/mvnw" ]]; then
+    MVN="${SCRIPT_DIR}/mvnw"
+  elif command -v mvn &>/dev/null; then
+    MVN="mvn"
+  else
+    die "Maven not found. No ./mvnw wrapper and no global mvn on PATH."
+  fi
+  ok "mvn   $(${MVN} --version 2>&1 | head -1 | sed 's/Apache Maven //')"
 
   command -v java &>/dev/null || die "Java not found. Install Java 17+."
   ok "java  $(java -version 2>&1 | head -1)"
 
-  command -v curl &>/dev/null || die "curl not found (needed for health check)."
+  command -v curl &>/dev/null || die "curl not found (needed for health-check)."
   ok "curl  $(curl --version | head -1)"
 
   step "Verifying Azure login"
-  local acct
+  local acct sub_id
   acct=$(az account show --query "name" -o tsv 2>/dev/null) \
-    || die "Not logged in. Run: az login"
-  local sub_id
+    || die "Not logged in to Azure. Run: az login"
   sub_id=$(az account show --query "id" -o tsv)
   ok "Authenticated"
   label "Subscription" "${acct}"
@@ -167,11 +172,11 @@ preflight() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  LOAD SECRETS
+#  STEP 2 — LOAD SECRETS
 # ─────────────────────────────────────────────────────────────────────────────
 load_secrets() {
   section "LOADING SECRETS FROM keys.properties"
-  step "Parsing keys.properties"
+  step "Parsing all values"
 
   DB_URL=$(prop "db.url")
   DB_USERNAME=$(prop "db.username")
@@ -194,158 +199,92 @@ load_secrets() {
   AWS_S3_BUCKET=$(prop "aws.bucket.name")
   AWS_REGION=$(prop "aws.region.name")
 
-  # Validate the critical ones
-  [[ -n "${DB_URL}" ]]          || die "db.url missing from keys.properties"
-  [[ -n "${DB_PASSWORD}" ]]     || die "db.password missing from keys.properties"
-  [[ -n "${JWT_SECRET}" ]]      || die "jwt.secret missing from keys.properties"
-  [[ -n "${REDIS_HOST}" ]]      || die "redis.host missing from keys.properties"
-  [[ -n "${REDIS_PASSWORD}" ]]  || die "redis.password missing from keys.properties"
+  [[ -n "${DB_URL}" ]]         || die "db.url missing from keys.properties"
+  [[ -n "${DB_PASSWORD}" ]]    || die "db.password missing from keys.properties"
+  [[ -n "${JWT_SECRET}" ]]     || die "jwt.secret missing from keys.properties"
+  [[ -n "${REDIS_HOST}" ]]     || die "redis.host missing from keys.properties"
+  [[ -n "${REDIS_PASSWORD}" ]] || die "redis.password missing from keys.properties"
 
-  ok "All 20 secrets loaded"
-  label "DB host" "$(echo "${DB_URL}" | sed 's/jdbc:postgresql:\/\///' | cut -d'/' -f1)"
-  label "Redis host" "${REDIS_HOST}:${REDIS_PORT}"
-  label "AWS region" "${AWS_REGION} / bucket: ${AWS_S3_BUCKET}"
+  ok "All 20 values loaded"
+  label "DB host"    "$(echo "${DB_URL}" | sed 's|jdbc:postgresql://||' | cut -d'/' -f1)"
+  label "Redis"      "${REDIS_HOST}:${REDIS_PORT}  ssl=${REDIS_SSL_ENABLED}"
+  label "AWS"        "${AWS_REGION} / s3://${AWS_S3_BUCKET}"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  STEP 1 — RESOURCE GROUP
+#  STEP 3 — RESOURCE GROUP
 # ─────────────────────────────────────────────────────────────────────────────
 create_resource_group() {
   section "AZURE INFRASTRUCTURE"
   step "Resource Group: ${RESOURCE_GROUP}"
 
   if az_exists az group show --name "${RESOURCE_GROUP}"; then
-    skip "Resource group '${RESOURCE_GROUP}'"
-  else
-    az group create \
-      --name "${RESOURCE_GROUP}" \
-      --location "${LOCATION}" \
-      --output none
-    ok "Resource group '${RESOURCE_GROUP}' created in ${LOCATION}"
-  fi
-}
-
-# ─────────────────────────────────────────────────────────────────────────────
-#  STEP 2 — KEY VAULT (unique name resolution)
-# ─────────────────────────────────────────────────────────────────────────────
-create_key_vault() {
-  step "Key Vault"
-
-  # Derive a unique suffix from subscription id (first 8 hex chars)
-  local suffix
-  suffix=$(az account show --query "id" -o tsv | tr -d '-' | cut -c1-8)
-  KEY_VAULT_NAME="${KEY_VAULT_BASE}-${suffix}"
-
-  info "Resolved Key Vault name: ${KEY_VAULT_NAME}"
-
-  if az_exists az keyvault show --name "${KEY_VAULT_NAME}" --resource-group "${RESOURCE_GROUP}"; then
-    skip "Key Vault '${KEY_VAULT_NAME}'"
-  else
-    az keyvault create \
-      --name "${KEY_VAULT_NAME}" \
-      --resource-group "${RESOURCE_GROUP}" \
-      --location "${LOCATION}" \
-      --enable-rbac-authorization false \
-      --sku standard \
-      --output none
-    ok "Key Vault '${KEY_VAULT_NAME}' created"
-  fi
-  label "Key Vault URI" "https://${KEY_VAULT_NAME}.vault.azure.net"
-}
-
-# ─────────────────────────────────────────────────────────────────────────────
-#  STEP 3 — STORE SECRETS IN KEY VAULT
-# ─────────────────────────────────────────────────────────────────────────────
-store_secrets() {
-  step "Granting current user access to Key Vault for secret writes"
-
-  # Try signed-in user UPN first; fall back to object-id for service principals
-  local user_upn
-  user_upn=$(az account show --query "user.name" -o tsv 2>/dev/null || true)
-
-  if [[ -n "${user_upn}" && "${user_upn}" != "null" ]]; then
-    az keyvault set-policy \
-      --name "${KEY_VAULT_NAME}" \
-      --upn "${user_upn}" \
-      --secret-permissions get list set delete \
-      --output none
-    ok "Access policy set for user: ${user_upn}"
-  else
-    local oid
-    oid=$(az ad signed-in-user show --query "id" -o tsv 2>/dev/null) \
-      || die "Cannot determine current user identity for Key Vault policy."
-    az keyvault set-policy \
-      --name "${KEY_VAULT_NAME}" \
-      --object-id "${oid}" \
-      --secret-permissions get list set delete \
-      --output none
-    ok "Access policy set for object-id: ${oid}"
+    APP_LOCATION=$(az group show --name "${RESOURCE_GROUP}" --query "location" -o tsv)
+    skip "Resource group '${RESOURCE_GROUP}' (location: ${APP_LOCATION})"
+    return 0
   fi
 
-  step "Storing secrets in Key Vault (20 secrets)"
+  # Try each candidate region until one is accepted by the subscription policy
+  local created=false
+  for region in "${REGION_CANDIDATES[@]}"; do
+    info "Trying region: ${region} ..."
+    local out
+    out=$(az group create --name "${RESOURCE_GROUP}" --location "${region}" --output none 2>&1) \
+      && created=true && APP_LOCATION="${region}" && break || true
 
-  _kv_set() {
-    az keyvault secret set \
-      --vault-name "${KEY_VAULT_NAME}" \
-      --name "$1" \
-      --value "$2" \
-      --output none
-    ok "Secret: $1"
-  }
+    if echo "${out}" | grep -qi "DisallowedByAzure\|RequestDisallowedByAzure\|disallowed by policy"; then
+      warn "Region '${region}' blocked by policy — trying next..."
+    else
+      echo "${out}"
+      die "Resource group creation failed in ${region} for an unexpected reason."
+    fi
+  done
 
-  # ── Database ──────────────────────────────────────────────────────────────
-  _kv_set "db-url"                    "${DB_URL}"
-  _kv_set "db-username"               "${DB_USERNAME}"
-  _kv_set "db-password"               "${DB_PASSWORD}"
-
-  # ── Mail ──────────────────────────────────────────────────────────────────
-  _kv_set "mail-username"             "${MAIL_USERNAME}"
-  _kv_set "mail-password"             "${MAIL_PASSWORD}"
-
-  # ── JWT ───────────────────────────────────────────────────────────────────
-  _kv_set "jwt-secret"                "${JWT_SECRET}"
-  _kv_set "jwt-expiration-ms"         "${JWT_EXPIRATION_MS}"
-  _kv_set "jwt-refresh-expiration-ms" "${JWT_REFRESH_EXPIRATION_MS}"
-
-  # ── Admin ─────────────────────────────────────────────────────────────────
-  _kv_set "admin-username"            "${ADMIN_USERNAME}"
-  _kv_set "admin-email"               "${ADMIN_EMAIL}"
-  _kv_set "admin-password"            "${ADMIN_PASSWORD}"
-
-  # ── Redis ─────────────────────────────────────────────────────────────────
-  _kv_set "redis-host"                "${REDIS_HOST}"
-  _kv_set "redis-port"                "${REDIS_PORT}"
-  _kv_set "redis-password"            "${REDIS_PASSWORD}"
-  _kv_set "redis-database"            "${REDIS_DATABASE}"
-  _kv_set "redis-ssl-enabled"         "${REDIS_SSL_ENABLED}"
-
-  # ── AWS / S3 ──────────────────────────────────────────────────────────────
-  _kv_set "aws-access-key-id"         "${AWS_ACCESS_KEY_ID}"
-  _kv_set "aws-secret-access-key"     "${AWS_SECRET_ACCESS_KEY}"
-  _kv_set "aws-s3-bucket"             "${AWS_S3_BUCKET}"
-  _kv_set "aws-region"                "${AWS_REGION}"
-
-  ok "All 20 secrets stored in Key Vault"
+  [[ "${created}" == "false" ]] \
+    && die "Could not create resource group in any region: ${REGION_CANDIDATES[*]}"
+  ok "Resource group '${RESOURCE_GROUP}' created in ${APP_LOCATION}"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  STEP 4 — APP SERVICE PLAN
 # ─────────────────────────────────────────────────────────────────────────────
 create_app_service_plan() {
-  step "App Service Plan: ${APP_SERVICE_PLAN} (${SKU}, Linux)"
+  step "App Service Plan: ${APP_SERVICE_PLAN} (Linux ${SKU})"
 
   if az_exists az appservice plan show --name "${APP_SERVICE_PLAN}" --resource-group "${RESOURCE_GROUP}"; then
-    skip "App Service Plan '${APP_SERVICE_PLAN}'"
-  else
-    az appservice plan create \
+    APP_LOCATION=$(az appservice plan show \
+      --name "${APP_SERVICE_PLAN}" --resource-group "${RESOURCE_GROUP}" \
+      --query "location" -o tsv)
+    skip "App Service Plan '${APP_SERVICE_PLAN}' (location: ${APP_LOCATION})"
+    return 0
+  fi
+
+  # Try region candidates — prefer the one the resource group is already in
+  local ordered_regions=("${APP_LOCATION}" "${REGION_CANDIDATES[@]}")
+  local created=false
+  for region in "${ordered_regions[@]}"; do
+    [[ -z "${region}" ]] && continue
+    info "Trying region: ${region} ..."
+    local out
+    out=$(az appservice plan create \
       --name "${APP_SERVICE_PLAN}" \
       --resource-group "${RESOURCE_GROUP}" \
-      --location "${LOCATION}" \
+      --location "${region}" \
       --sku "${SKU}" \
       --is-linux \
-      --output none
-    ok "App Service Plan created (Linux ${SKU})"
-  fi
+      --output none 2>&1) \
+      && created=true && APP_LOCATION="${region}" && break || true
+
+    if echo "${out}" | grep -qi "DisallowedByAzure\|RequestDisallowedByAzure\|disallowed by policy"; then
+      warn "Region '${region}' blocked — trying next..."
+    else
+      echo "${out}"
+      die "App Service Plan creation failed in ${region} for an unexpected reason."
+    fi
+  done
+
+  [[ "${created}" == "false" ]] && die "Could not create App Service Plan in any allowed region."
+  ok "App Service Plan created (Linux ${SKU}) in ${APP_LOCATION}"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -363,50 +302,16 @@ create_web_app() {
       --plan "${APP_SERVICE_PLAN}" \
       --runtime "JAVA:17-java17" \
       --output none
-    ok "Web App '${APP_NAME}' created with Java 17 runtime"
+    ok "Web App '${APP_NAME}' created (Java 17, region: ${APP_LOCATION})"
   fi
   label "App URL" "https://${APP_NAME}.azurewebsites.net"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  STEP 6 — MANAGED IDENTITY + KEY VAULT ACCESS
-# ─────────────────────────────────────────────────────────────────────────────
-enable_managed_identity() {
-  step "Enabling System-Assigned Managed Identity on Web App"
-
-  local principal_id
-  principal_id=$(az webapp identity assign \
-    --name "${APP_NAME}" \
-    --resource-group "${RESOURCE_GROUP}" \
-    --query "principalId" \
-    --output tsv)
-
-  ok "Managed Identity enabled"
-  label "Principal ID" "${principal_id}"
-
-  step "Granting Managed Identity 'get/list' access on Key Vault"
-  info "Waiting 20 s for Azure AD identity propagation..."
-  sleep 20
-
-  az keyvault set-policy \
-    --name "${KEY_VAULT_NAME}" \
-    --object-id "${principal_id}" \
-    --secret-permissions get list \
-    --output none
-
-  ok "Key Vault access policy applied for App Service identity"
-}
-
-# ─────────────────────────────────────────────────────────────────────────────
-#  STEP 7 — APP SETTINGS (Key Vault references + static config)
+#  STEP 6 — APP SETTINGS (all values injected directly as environment variables)
 # ─────────────────────────────────────────────────────────────────────────────
 configure_app_settings() {
-  step "Configuring App Settings with Key Vault references"
-
-  # Convenience alias for the Key Vault reference syntax
-  kv() { echo "@Microsoft.KeyVault(VaultName=${KEY_VAULT_NAME};SecretName=$1)"; }
-
-  info "Mapping 20 secrets to Key Vault references..."
+  step "Configuring App Settings (20 env vars + runtime settings)"
 
   az webapp config appsettings set \
     --name "${APP_NAME}" \
@@ -416,38 +321,39 @@ configure_app_settings() {
       SPRING_PROFILES_ACTIVE="${SPRING_PROFILE}" \
       WEBSITES_PORT="80" \
       SCM_DO_BUILD_DURING_DEPLOYMENT="false" \
+      JAVA_OPTS="${JAVA_OPTS}" \
       \
-      "DB_URL=$(kv db-url)" \
-      "DB_USERNAME=$(kv db-username)" \
-      "DB_PASSWORD=$(kv db-password)" \
+      DB_URL="${DB_URL}" \
+      DB_USERNAME="${DB_USERNAME}" \
+      DB_PASSWORD="${DB_PASSWORD}" \
       \
-      "MAIL_USERNAME=$(kv mail-username)" \
-      "MAIL_PASSWORD=$(kv mail-password)" \
+      MAIL_USERNAME="${MAIL_USERNAME}" \
+      MAIL_PASSWORD="${MAIL_PASSWORD}" \
       \
-      "JWT_SECRET=$(kv jwt-secret)" \
-      "JWT_EXPIRATION_MS=$(kv jwt-expiration-ms)" \
-      "JWT_REFRESH_EXPIRATION_MS=$(kv jwt-refresh-expiration-ms)" \
+      JWT_SECRET="${JWT_SECRET}" \
+      JWT_EXPIRATION_MS="${JWT_EXPIRATION_MS}" \
+      JWT_REFRESH_EXPIRATION_MS="${JWT_REFRESH_EXPIRATION_MS}" \
       \
-      "ADMIN_USERNAME=$(kv admin-username)" \
-      "ADMIN_EMAIL=$(kv admin-email)" \
-      "ADMIN_PASSWORD=$(kv admin-password)" \
+      ADMIN_USERNAME="${ADMIN_USERNAME}" \
+      ADMIN_EMAIL="${ADMIN_EMAIL}" \
+      ADMIN_PASSWORD="${ADMIN_PASSWORD}" \
       \
-      "REDIS_HOST=$(kv redis-host)" \
-      "REDIS_PORT=$(kv redis-port)" \
-      "REDIS_PASSWORD=$(kv redis-password)" \
-      "REDIS_DATABASE=$(kv redis-database)" \
-      "REDIS_SSL_ENABLED=$(kv redis-ssl-enabled)" \
+      REDIS_HOST="${REDIS_HOST}" \
+      REDIS_PORT="${REDIS_PORT}" \
+      REDIS_PASSWORD="${REDIS_PASSWORD}" \
+      REDIS_DATABASE="${REDIS_DATABASE}" \
+      REDIS_SSL_ENABLED="${REDIS_SSL_ENABLED}" \
       \
-      "AWS_ACCESS_KEY_ID=$(kv aws-access-key-id)" \
-      "AWS_SECRET_ACCESS_KEY=$(kv aws-secret-access-key)" \
-      "AWS_S3_BUCKET=$(kv aws-s3-bucket)" \
-      "AWS_REGION=$(kv aws-region)"
+      AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
+      AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
+      AWS_S3_BUCKET="${AWS_S3_BUCKET}" \
+      AWS_REGION="${AWS_REGION}"
 
-  ok "App Settings configured — all secrets load from Key Vault at runtime"
+  ok "App Settings saved (24 settings)"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  STEP 8 — STARTUP COMMAND + LOGGING
+#  STEP 7 — STARTUP COMMAND + LOGGING
 # ─────────────────────────────────────────────────────────────────────────────
 configure_runtime() {
   step "Setting Java startup command"
@@ -466,23 +372,22 @@ configure_runtime() {
     --web-server-logging filesystem \
     --docker-container-logging filesystem \
     --output none
-  ok "Logging enabled (filesystem)"
+  ok "Logging enabled"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  STEP 9 — MAVEN BUILD
+#  STEP 8 — MAVEN BUILD
 # ─────────────────────────────────────────────────────────────────────────────
 build_jar() {
   section "BUILD"
-  step "Maven clean package (tests skipped for deployment speed)"
-  info "Run 'mvn test' separately to verify the test suite."
+  step "Maven clean package (tests skipped for deploy speed)"
+  info "Run './mvnw test' separately to run the full test suite."
 
   cd "${SCRIPT_DIR}"
-  mvn clean package -DskipTests --no-transfer-progress
+  ${MVN} clean package -DskipTests --no-transfer-progress
 
-  # Resolve the JAR path
   JAR_PATH=$(ls ${JAR_GLOB} 2>/dev/null | grep -v sources | head -1)
-  [[ -z "${JAR_PATH}" ]] && die "JAR not found after build. Check Maven output above."
+  [[ -z "${JAR_PATH}" ]] && die "JAR not found after build — check Maven output above."
 
   local size
   size=$(du -sh "${JAR_PATH}" | cut -f1)
@@ -490,22 +395,21 @@ build_jar() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  STEP 10 — DEPLOY JAR
+#  STEP 9 — DEPLOY JAR
 # ─────────────────────────────────────────────────────────────────────────────
 deploy_jar() {
   section "DEPLOYMENT"
-  step "Deploying JAR to Azure App Service"
+  step "Uploading JAR to Azure App Service"
 
-  # Resolve JAR if we skipped build
-  if [[ -z "${JAR_PATH:-}" ]]; then
+  if [[ -z "${JAR_PATH}" ]]; then
     JAR_PATH=$(ls ${JAR_GLOB} 2>/dev/null | grep -v sources | head -1)
-    [[ -z "${JAR_PATH}" ]] && die "No JAR found at ${JAR_GLOB}. Run without --skip-build."
+    [[ -z "${JAR_PATH}" ]] && die "No JAR at ${JAR_GLOB}. Run without --skip-build first."
   fi
 
   local size
   size=$(du -sh "${JAR_PATH}" | cut -f1)
-  label "Uploading" "$(basename "${JAR_PATH}") (${size})"
-  label "Destination" "https://${APP_NAME}.azurewebsites.net"
+  label "File"        "$(basename "${JAR_PATH}") (${size})"
+  label "Target"      "https://${APP_NAME}.azurewebsites.net"
 
   az webapp deploy \
     --name "${APP_NAME}" \
@@ -515,33 +419,33 @@ deploy_jar() {
     --async false \
     --output none
 
-  ok "JAR deployed successfully"
-  info "Azure App Service is now starting the application..."
+  ok "JAR deployed — App Service is starting the application..."
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  STEP 11 — HEALTH CHECK POLL
+#  STEP 10 — HEALTH CHECK POLL
 # ─────────────────────────────────────────────────────────────────────────────
 health_check() {
   section "HEALTH CHECK"
-  step "Polling application health"
+  step "Waiting for application to respond"
 
   local base_url="https://${APP_NAME}.azurewebsites.net"
   local health_url="${base_url}/actuator/health"
-  local max=24          # 24 × 15 s = 6 minutes total
+  local max=24   # 24 × 15 s = 6 min
   local delay=15
   local attempt=0
 
-  label "Health URL" "${health_url}"
-  info "Polling every ${delay}s (up to $((max * delay / 60)) min)..."
+  label "Endpoint" "${health_url}"
+  info  "Polling every ${delay}s (max $((max * delay / 60)) min)..."
   echo ""
 
   while [[ ${attempt} -lt ${max} ]]; do
     attempt=$((attempt + 1))
     local code
-    code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "${health_url}" 2>/dev/null || echo "000")
+    code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "${health_url}" 2>/dev/null \
+           || echo "000")
 
-    printf "    ${DIM}[%02d/%02d]${NC} HTTP %s" "${attempt}" "${max}" "${code}"
+    printf "    ${DIM}[%02d/%02d]${NC}  HTTP %-5s" "${attempt}" "${max}" "${code}"
 
     case "${code}" in
       200)
@@ -550,22 +454,23 @@ health_check() {
         return 0
         ;;
       401|403)
-        echo -e "  ${YELLOW}← secured (app is running) ✔${NC}"
-        ok "Application is running (health endpoint requires auth)"
+        echo -e "  ${YELLOW}← secured — app is running ✔${NC}"
+        ok "Application is running (health endpoint requires auth — this is fine)"
         return 0
         ;;
       000)
         echo -e "  ${DIM}← not yet reachable${NC}"
         ;;
       *)
-        echo -e "  ${DIM}← starting...${NC}"
+        echo -e "  ${DIM}← starting (${code})${NC}"
         ;;
     esac
     sleep "${delay}"
   done
 
-  warn "App did not respond within timeout — it may still be warming up."
-  warn "Stream logs: az webapp log tail --name ${APP_NAME} --resource-group ${RESOURCE_GROUP}"
+  echo ""
+  warn "App did not respond within the timeout — it may still be starting up."
+  warn "Stream logs:  az webapp log tail --name ${APP_NAME} --resource-group ${RESOURCE_GROUP}"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -589,8 +494,7 @@ print_summary() {
   label "  Resource Group " "${RESOURCE_GROUP}"
   label "  App Service    " "${APP_NAME}"
   label "  Service Plan   " "${APP_SERVICE_PLAN} (${SKU})"
-  label "  Key Vault      " "${KEY_VAULT_NAME}"
-  label "  Region         " "${LOCATION}"
+  label "  Region         " "${APP_LOCATION:-eastus}"
   label "  Spring Profile " "${SPRING_PROFILE}"
 
   echo -e "\n  ${BOLD}${WHITE}Useful Commands:${NC}"
@@ -604,13 +508,10 @@ print_summary() {
   echo -e "\n  ${DIM}# View all App Settings${NC}"
   echo -e "  ${CYAN}az webapp config appsettings list --name ${APP_NAME} --resource-group ${RESOURCE_GROUP} -o table${NC}"
 
-  echo -e "\n  ${DIM}# List Key Vault secrets${NC}"
-  echo -e "  ${CYAN}az keyvault secret list --vault-name ${KEY_VAULT_NAME} -o table${NC}"
+  echo -e "\n  ${DIM}# Re-deploy only (after code change, infra already exists)${NC}"
+  echo -e "  ${CYAN}./deploy-azure.sh --skip-infra${NC}"
 
-  echo -e "\n  ${DIM}# Re-deploy only (after code change)${NC}"
-  echo -e "  ${CYAN}./deploy-azure.sh --skip-infra --skip-secrets${NC}"
-
-  echo -e "\n  ${DIM}# Clean up ALL resources (deletes everything)${NC}"
+  echo -e "\n  ${DIM}# Delete ALL Azure resources (full cleanup)${NC}"
   echo -e "  ${RED}az group delete --name ${RESOURCE_GROUP} --yes --no-wait${NC}"
 
   echo ""
@@ -623,34 +524,24 @@ print_summary() {
 # ─────────────────────────────────────────────────────────────────────────────
 main() {
   banner
-  echo -e "  ${DIM}Started: $(date)${NC}"
-  echo -e "  ${DIM}Flags  : skip-build=${SKIP_BUILD}  skip-infra=${SKIP_INFRA}  skip-secrets=${SKIP_SECRETS}${NC}"
+  echo -e "  ${DIM}Started : $(date)${NC}"
+  echo -e "  ${DIM}Flags   : skip-build=${SKIP_BUILD}  skip-infra=${SKIP_INFRA}${NC}"
 
   preflight
   load_secrets
 
   if [[ "${SKIP_INFRA}" == "false" ]]; then
     create_resource_group
-    create_key_vault
-
-    if [[ "${SKIP_SECRETS}" == "false" ]]; then
-      store_secrets
-    else
-      warn "Skipping secret writes (--skip-secrets). Key Vault must already be populated."
-    fi
-
     create_app_service_plan
     create_web_app
-    enable_managed_identity
     configure_app_settings
     configure_runtime
   else
-    warn "Skipping infrastructure setup (--skip-infra)."
-    # Still need KEY_VAULT_NAME for summary — derive it
-    local suffix
-    suffix=$(az account show --query "id" -o tsv | tr -d '-' | cut -c1-8)
-    KEY_VAULT_NAME="${KEY_VAULT_BASE}-${suffix}"
-    info "Using existing resources. App: ${APP_NAME}, KV: ${KEY_VAULT_NAME}"
+    warn "Skipping infrastructure setup (--skip-infra). Using existing App Service."
+    # Resolve APP_LOCATION for the summary
+    APP_LOCATION=$(az appservice plan show \
+      --name "${APP_SERVICE_PLAN}" --resource-group "${RESOURCE_GROUP}" \
+      --query "location" -o tsv 2>/dev/null || echo "unknown")
   fi
 
   if [[ "${SKIP_BUILD}" == "false" ]]; then
