@@ -1,6 +1,5 @@
 package com.mozilla.curriculum_tracking_system.service.department;
 
-import com.mozilla.curriculum_tracking_system.constants.CacheConstants;
 import com.mozilla.curriculum_tracking_system.dto.department.CreateDepartmentRequest;
 import com.mozilla.curriculum_tracking_system.dto.department.DepartmentDto;
 import com.mozilla.curriculum_tracking_system.dto.department.DepartmentPageResponse;
@@ -14,12 +13,8 @@ import com.mozilla.curriculum_tracking_system.model.school.School;
 import com.mozilla.curriculum_tracking_system.repository.department.DepartmentRepository;
 import com.mozilla.curriculum_tracking_system.repository.school.SchoolRepository;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
-import com.mozilla.curriculum_tracking_system.util.CacheKeyGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,11 +31,8 @@ public class DepartmentService implements IDepartmentService {
     private final SchoolRepository schoolRepository;
     private final DepartmentMapper departmentMapper;
     private final IAuthenticationService authenticationService;
-    private final CacheKeyGenerator cacheKeyGenerator;
 
     @Override
-    @Cacheable(value = CacheConstants.DEPARTMENTS,
-            key = "@cacheKeyGenerator.generateDepartmentPageableKey('all', #pageable)")
     public DepartmentPageResponse getAllDepartments(Pageable pageable) {
         log.debug("Fetching all departments from database - Page: {}, Size: {}",
                 pageable.getPageNumber(), pageable.getPageSize());
@@ -49,8 +41,6 @@ public class DepartmentService implements IDepartmentService {
     }
 
     @Override
-    @Cacheable(value = CacheConstants.DEPARTMENTS_BY_SCHOOL,
-            key = "@cacheKeyGenerator.generateDepartmentPageableKey('by_school', #pageable, #schoolId)")
     public DepartmentPageResponse getDepartmentsBySchoolId(Long schoolId, Pageable pageable) {
         log.debug("Fetching departments for school {} from database - Page: {}, Size: {}",
                 schoolId, pageable.getPageNumber(), pageable.getPageSize());
@@ -60,8 +50,6 @@ public class DepartmentService implements IDepartmentService {
     }
 
     @Override
-    @Cacheable(value = CacheConstants.DEPARTMENTS_SEARCH,
-            key = "@cacheKeyGenerator.generateDepartmentSearchKey(#searchTerm, #pageable, null)")
     public DepartmentPageResponse searchDepartments(String searchTerm, Pageable pageable) {
         if (!StringUtils.hasText(searchTerm)) {
             return getAllDepartments(pageable);
@@ -75,8 +63,7 @@ public class DepartmentService implements IDepartmentService {
     }
 
     @Override
-    @Cacheable(value = CacheConstants.DEPARTMENTS_SEARCH_BY_SCHOOL,
-            key = "@cacheKeyGenerator.generateDepartmentSearchKey(#searchTerm, #pageable, #schoolId)")
+
     public DepartmentPageResponse searchDepartmentsBySchoolId(Long schoolId, String searchTerm, Pageable pageable) {
         validateSchoolExists(schoolId);
 
@@ -93,8 +80,6 @@ public class DepartmentService implements IDepartmentService {
     }
 
     @Override
-    @Cacheable(value = CacheConstants.DEPARTMENT_BY_ID,
-            key = "@cacheKeyGenerator.generateSimpleKey(#departmentId)")
     public DepartmentDto getDepartmentById(Long departmentId) {
         log.debug("Fetching department {} from database", departmentId);
         Department department = departmentRepository.findByIdWithSchool(departmentId)
@@ -105,13 +90,6 @@ public class DepartmentService implements IDepartmentService {
 
     @Override
     @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = CacheConstants.DEPARTMENTS, allEntries = true),
-            @CacheEvict(value = CacheConstants.DEPARTMENTS_BY_SCHOOL, allEntries = true),
-            @CacheEvict(value = CacheConstants.DEPARTMENTS_SEARCH, allEntries = true),
-            @CacheEvict(value = CacheConstants.DEPARTMENTS_SEARCH_BY_SCHOOL, allEntries = true),
-            @CacheEvict(value = CacheConstants.DEPARTMENT_COUNT_BY_SCHOOL, allEntries = true)
-    })
     public DepartmentDto createDepartment(CreateDepartmentRequest request, String token) {
         validateAdminAccess(token);
         validateCreateDepartmentRequest(request);
@@ -123,12 +101,10 @@ public class DepartmentService implements IDepartmentService {
             throw new BadRequestException("Cannot create department for inactive school");
         }
 
-        // Check for duplicate name
         if (departmentRepository.existsByNameAndSchoolId(request.getName(), request.getSchoolId())) {
             throw new BadRequestException("Department with name '" + request.getName() + "' already exists in this school");
         }
 
-        // Check for duplicate code if provided
         if (StringUtils.hasText(request.getCode()) &&
                 departmentRepository.existsByCodeAndSchoolId(request.getCode(), request.getSchoolId())) {
             throw new BadRequestException("Department with code '" + request.getCode() + "' already exists in this school");
@@ -149,17 +125,6 @@ public class DepartmentService implements IDepartmentService {
 
     @Override
     @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = CacheConstants.DEPARTMENTS, allEntries = true),
-            @CacheEvict(value = CacheConstants.DEPARTMENTS_BY_SCHOOL, allEntries = true),
-            @CacheEvict(value = CacheConstants.DEPARTMENTS_SEARCH, allEntries = true),
-            @CacheEvict(value = CacheConstants.DEPARTMENTS_SEARCH_BY_SCHOOL, allEntries = true),
-            @CacheEvict(value = CacheConstants.DEPARTMENT_BY_ID,
-                    key = "@cacheKeyGenerator.generateSimpleKey(#departmentId)"),
-            @CacheEvict(value = CacheConstants.DEPARTMENT_EXISTS,
-                    key = "@cacheKeyGenerator.generateSimpleKey(#departmentId)"),
-            @CacheEvict(value = CacheConstants.DEPARTMENT_COUNT_BY_SCHOOL, allEntries = true)
-    })
     public DepartmentDto updateDepartment(Long departmentId, UpdateDepartmentRequest request, String token) {
         validateAdminAccess(token);
 
@@ -198,17 +163,6 @@ public class DepartmentService implements IDepartmentService {
 
     @Override
     @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = CacheConstants.DEPARTMENTS, allEntries = true),
-            @CacheEvict(value = CacheConstants.DEPARTMENTS_BY_SCHOOL, allEntries = true),
-            @CacheEvict(value = CacheConstants.DEPARTMENTS_SEARCH, allEntries = true),
-            @CacheEvict(value = CacheConstants.DEPARTMENTS_SEARCH_BY_SCHOOL, allEntries = true),
-            @CacheEvict(value = CacheConstants.DEPARTMENT_BY_ID,
-                    key = "@cacheKeyGenerator.generateSimpleKey(#departmentId)"),
-            @CacheEvict(value = CacheConstants.DEPARTMENT_EXISTS,
-                    key = "@cacheKeyGenerator.generateSimpleKey(#departmentId)"),
-            @CacheEvict(value = CacheConstants.DEPARTMENT_COUNT_BY_SCHOOL, allEntries = true)
-    })
     public void deleteDepartment(Long departmentId, String token) {
         validateAdminAccess(token);
 
@@ -230,25 +184,18 @@ public class DepartmentService implements IDepartmentService {
     }
 
     @Override
-    @Cacheable(value = CacheConstants.DEPARTMENT_EXISTS,
-            key = "@cacheKeyGenerator.generateSimpleKey(#departmentId)")
     public boolean existsById(Long departmentId) {
         log.debug("Checking if department {} exists", departmentId);
         return departmentRepository.existsById(departmentId);
     }
 
     @Override
-    @Cacheable(value = CacheConstants.DEPARTMENT_COUNT_BY_SCHOOL,
-            key = "@cacheKeyGenerator.generateCountKey('department', #schoolId)")
     public long getDepartmentCountBySchoolId(Long schoolId) {
         log.debug("Getting department count for school {}", schoolId);
         validateSchoolExists(schoolId);
         return departmentRepository.countBySchoolId(schoolId);
     }
 
-    // Validation methods
-    @Cacheable(value = CacheConstants.SCHOOL_EXISTS,
-            key = "@cacheKeyGenerator.generateSimpleKey(#schoolId)")
     private void validateSchoolExists(Long schoolId) {
         if (!schoolRepository.existsById(schoolId)) {
             throw new ResourceNotFoundException("School not found with ID: " + schoolId);

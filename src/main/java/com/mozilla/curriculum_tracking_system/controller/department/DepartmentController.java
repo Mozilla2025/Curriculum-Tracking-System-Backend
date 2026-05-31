@@ -2,7 +2,7 @@ package com.mozilla.curriculum_tracking_system.controller.department;
 
 import com.mozilla.curriculum_tracking_system.dto.department.DepartmentDto;
 import com.mozilla.curriculum_tracking_system.dto.department.DepartmentPageResponse;
-import com.mozilla.curriculum_tracking_system.response.ApiResponse;
+import com.mozilla.curriculum_tracking_system.dto.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.department.IDepartmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

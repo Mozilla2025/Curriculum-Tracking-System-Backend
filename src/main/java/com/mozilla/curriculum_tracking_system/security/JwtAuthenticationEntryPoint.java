@@ -1,7 +1,7 @@
 package com.mozilla.curriculum_tracking_system.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mozilla.curriculum_tracking_system.response.ApiResponse;
+import com.mozilla.curriculum_tracking_system.dto.ApiResponse;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

@@ -5,7 +5,7 @@ import com.mozilla.curriculum_tracking_system.dto.curriculum.CreateCurriculumReq
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CurriculumDto;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CurriculumStatusStats;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.UpdateCurriculumRequest;
-import com.mozilla.curriculum_tracking_system.response.ApiResponse;
+import com.mozilla.curriculum_tracking_system.dto.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.curriculum.ICurriculumService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

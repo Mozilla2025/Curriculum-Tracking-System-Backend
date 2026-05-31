@@ -25,7 +25,7 @@ public final class CacheConstants {
     public static final String CURRICULUM_EXISTS_BY_CODE = "curriculum_exists_by_code";
     public static final String CURRICULUM_PREFIX = "curriculum";
     public static final String DEPARTMENT_PREFIX = "department";
-    public static final String SCHOOL_PREFIX = "school";
+
     private CacheConstants() {
     }
 }

@@ -3,7 +3,7 @@ package com.mozilla.curriculum_tracking_system.controller.auth;
 import com.mozilla.curriculum_tracking_system.dto.auth.LoginRequest;
 import com.mozilla.curriculum_tracking_system.dto.auth.LoginResponse;
 import com.mozilla.curriculum_tracking_system.dto.auth.RefreshTokenRequest;
-import com.mozilla.curriculum_tracking_system.response.ApiResponse;
+import com.mozilla.curriculum_tracking_system.dto.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

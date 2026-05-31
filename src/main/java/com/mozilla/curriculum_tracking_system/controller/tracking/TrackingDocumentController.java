@@ -1,9 +1,8 @@
 package com.mozilla.curriculum_tracking_system.controller.tracking;
 
-import com.mozilla.curriculum_tracking_system.documentation.TrackingDocumentControllerDocs;
 import com.mozilla.curriculum_tracking_system.dto.tracking.TrackingDocumentDto;
 import com.mozilla.curriculum_tracking_system.enums.DocumentType;
-import com.mozilla.curriculum_tracking_system.response.ApiResponse;
+import com.mozilla.curriculum_tracking_system.dto.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
 import com.mozilla.curriculum_tracking_system.service.tracking.ITrackingDocumentStorageService;
 import jakarta.validation.constraints.NotNull;
@@ -32,7 +31,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Validated
 @Slf4j
-public class TrackingDocumentController implements TrackingDocumentControllerDocs {
+public class TrackingDocumentController  {
 
     private final ITrackingDocumentStorageService documentStorageService;
     private final IAuthenticationService authenticationService;

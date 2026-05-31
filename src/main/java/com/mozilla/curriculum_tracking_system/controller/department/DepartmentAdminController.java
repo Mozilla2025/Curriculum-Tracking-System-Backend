@@ -4,7 +4,7 @@ import com.mozilla.curriculum_tracking_system.annotation.AdminOnly;
 import com.mozilla.curriculum_tracking_system.dto.department.CreateDepartmentRequest;
 import com.mozilla.curriculum_tracking_system.dto.department.DepartmentDto;
 import com.mozilla.curriculum_tracking_system.dto.department.UpdateDepartmentRequest;
-import com.mozilla.curriculum_tracking_system.response.ApiResponse;
+import com.mozilla.curriculum_tracking_system.dto.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.department.IDepartmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

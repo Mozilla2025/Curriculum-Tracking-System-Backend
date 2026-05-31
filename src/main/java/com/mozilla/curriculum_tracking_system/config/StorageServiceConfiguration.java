@@ -13,10 +13,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
-/**
- * Configuration class for S3 storage services
- * Provides additional S3-related beans and validation
- */
+
 @Configuration
 @Slf4j
 public class StorageServiceConfiguration {
@@ -95,13 +92,6 @@ public class StorageServiceConfiguration {
             throw new IllegalStateException("Maximum file size must be positive");
         }
 
-        log.info("Storage configuration validated successfully:");
-        log.info("  Default bucket: {}", defaultBucket);
-        log.info("  AWS region: {}", awsRegion);
-        log.info("  AWS access key: {}***", awsAccessKeyId.substring(0, Math.min(4, awsAccessKeyId.length())));
-        log.info("  Max file size: {} MB", maxFileSize / (1024 * 1024));
-        log.info("  Cleanup enabled: {}", cleanupEnabled);
-        log.info("  Retention days: {}", retentionDays);
     }
 
     /**

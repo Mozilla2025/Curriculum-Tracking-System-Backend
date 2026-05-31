@@ -3,7 +3,7 @@ package com.mozilla.curriculum_tracking_system.controller.tracking;
 import com.mozilla.curriculum_tracking_system.dto.tracking.search.TrackingStepSearchCriteria;
 import com.mozilla.curriculum_tracking_system.enums.TrackingAction;
 import com.mozilla.curriculum_tracking_system.enums.TrackingStage;
-import com.mozilla.curriculum_tracking_system.response.ApiResponse;
+import com.mozilla.curriculum_tracking_system.dto.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.tracking.ITrackingStepService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;

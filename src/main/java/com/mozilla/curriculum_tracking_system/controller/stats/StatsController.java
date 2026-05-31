@@ -1,7 +1,7 @@
 package com.mozilla.curriculum_tracking_system.controller.stats;
 
 import com.mozilla.curriculum_tracking_system.dto.stats.SystemStatsDto;
-import com.mozilla.curriculum_tracking_system.response.ApiResponse;
+import com.mozilla.curriculum_tracking_system.dto.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.curriculum.ICurriculumService;
 import com.mozilla.curriculum_tracking_system.service.department.IDepartmentService;
 import com.mozilla.curriculum_tracking_system.service.school.ISchoolService;

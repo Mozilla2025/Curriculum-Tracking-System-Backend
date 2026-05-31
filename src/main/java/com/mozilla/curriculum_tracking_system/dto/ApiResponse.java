@@ -1,4 +1,4 @@
-package com.mozilla.curriculum_tracking_system.response;
+package com.mozilla.curriculum_tracking_system.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

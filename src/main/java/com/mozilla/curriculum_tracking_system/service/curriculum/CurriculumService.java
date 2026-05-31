@@ -1,6 +1,5 @@
 package com.mozilla.curriculum_tracking_system.service.curriculum;
 
-import com.mozilla.curriculum_tracking_system.constants.CacheConstants;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.*;
 import com.mozilla.curriculum_tracking_system.enums.CurriculumStatus;
 import com.mozilla.curriculum_tracking_system.exception.BadRequestException;
@@ -16,12 +15,8 @@ import com.mozilla.curriculum_tracking_system.repository.curriculum.CurriculumRe
 import com.mozilla.curriculum_tracking_system.repository.department.DepartmentRepository;
 import com.mozilla.curriculum_tracking_system.repository.school.SchoolRepository;
 import com.mozilla.curriculum_tracking_system.service.auth.IAuthenticationService;
-import com.mozilla.curriculum_tracking_system.util.CacheKeyGenerator;
 import com.mozilla.curriculum_tracking_system.util.specifications.CurriculumSpecification;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -42,19 +37,8 @@ public class CurriculumService implements ICurriculumService {
     private final AcademicLevelRepository academicLevelRepository;
     private final CurriculumMapper curriculumMapper;
     private final IAuthenticationService authenticationService;
-    private final CacheKeyGenerator cacheKeyGenerator;
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(value = CacheConstants.CURRICULUMS, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_SCHOOL, key = "#request.schoolId"),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_DEPARTMENT, key = "#request.departmentId"),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_ACADEMIC_LEVEL, key = "#request.academicLevelId"),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_SEARCH, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUM_STATS, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUM_EXISTS_BY_NAME_DEPT_LEVEL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUM_EXISTS_BY_CODE, allEntries = true)
-    })
     public CurriculumDto createCurriculum(CreateCurriculumRequest request, String authToken) {
         validateAdminAccess(authToken);
         validateCreateRequest(request);
@@ -71,15 +55,12 @@ public class CurriculumService implements ICurriculumService {
         Department department = findDepartmentById(request.getDepartmentId());
         AcademicLevel academicLevel = findAcademicLevelById(request.getAcademicLevelId());
 
-        // Validate that department belongs to the school
         if (!department.getSchool().getId().equals(school.getId())) {
             throw new BadRequestException("Department does not belong to the specified school");
         }
 
-        // Create curriculum Entity
         Curriculum curriculum = curriculumMapper.toEntity(request, school, department, academicLevel);
 
-        // Save Curriculum
         Curriculum savedCurriculum = curriculumRepository.save(curriculum);
 
         return curriculumMapper.toDto(savedCurriculum);
@@ -87,7 +68,6 @@ public class CurriculumService implements ICurriculumService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheConstants.CURRICULUM_BY_ID, key = "#id")
     public CurriculumDto getCurriculumById(Long id) {
         Curriculum curriculum = curriculumRepository.findByIdWithAssociations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Curriculum not found"));
@@ -97,8 +77,6 @@ public class CurriculumService implements ICurriculumService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheConstants.CURRICULUMS,
-            key = "@cacheKeyGenerator.generateCurriculumPageableKey('all', #pageable)")
     public CurriculumPageResponse getAllCurriculums(Pageable pageable) {
         Page<Curriculum> curriculumPage = curriculumRepository.findAll(pageable);
         return curriculumMapper.buildCurriculumPageResponse(curriculumPage);
@@ -106,8 +84,6 @@ public class CurriculumService implements ICurriculumService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheConstants.CURRICULUMS_SEARCH,
-            key = "@cacheKeyGenerator.generateCurriculumSearchKey(#criteria, #pageable)")
     public CurriculumPageResponse searchCurriculums(CurriculumSearchCriteria criteria, Pageable pageable) {
         Page<Curriculum> curriculumPage = curriculumRepository.findAll(
                 CurriculumSpecification.withCriteria(criteria), pageable
@@ -116,17 +92,6 @@ public class CurriculumService implements ICurriculumService {
     }
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(value = CacheConstants.CURRICULUM_BY_ID, key = "#id"),
-            @CacheEvict(value = CacheConstants.CURRICULUMS, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_SCHOOL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_DEPARTMENT, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_ACADEMIC_LEVEL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_SEARCH, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUM_STATS, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUM_EXISTS_BY_NAME_DEPT_LEVEL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUM_EXISTS_BY_CODE, allEntries = true)
-    })
     public CurriculumDto updateCurriculum(Long id, UpdateCurriculumRequest request, String authToken) {
         validateAdminAccess(authToken);
 
@@ -137,7 +102,6 @@ public class CurriculumService implements ICurriculumService {
         if (request.getDepartmentId() != null && !request.getDepartmentId().equals(curriculum.getDepartment().getId())) {
             department = findDepartmentById(request.getDepartmentId());
 
-            // Validate that department belongs to the same school
             if (!department.getSchool().getId().equals(curriculum.getSchool().getId())) {
                 throw new BadRequestException("Department does not belong to the curriculum's school");
             }
@@ -155,36 +119,15 @@ public class CurriculumService implements ICurriculumService {
     }
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(value = CacheConstants.CURRICULUM_BY_ID, key = "#id"),
-            @CacheEvict(value = CacheConstants.CURRICULUMS, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_SCHOOL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_DEPARTMENT, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_ACADEMIC_LEVEL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_SEARCH, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUM_STATS, allEntries = true)
-    })
     public void deleteCurriculum(Long id, String authToken) {
         validateAdminAccess(authToken);
 
-        // Soft deletion...Just inactivate the curriculum
         Curriculum curriculum = findCurriculumById(id);
         curriculum.setActive(false);
         curriculumRepository.save(curriculum);
     }
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(value = CacheConstants.CURRICULUM_BY_ID, key = "#id"),
-            @CacheEvict(value = CacheConstants.CURRICULUMS, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_SCHOOL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_DEPARTMENT, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_ACADEMIC_LEVEL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_SEARCH, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUM_STATS, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUM_EXISTS_BY_NAME_DEPT_LEVEL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUM_EXISTS_BY_CODE, allEntries = true)
-    })
     public void permanentlyDeleteCurriculum(Long id, String authToken) {
         validateAdminAccess(authToken);
 
@@ -196,15 +139,6 @@ public class CurriculumService implements ICurriculumService {
     }
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(value = CacheConstants.CURRICULUM_BY_ID, key = "#id"),
-            @CacheEvict(value = CacheConstants.CURRICULUMS, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_SCHOOL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_DEPARTMENT, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_ACADEMIC_LEVEL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_SEARCH, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUM_STATS, allEntries = true)
-    })
     public CurriculumDto putCurriculumUnderReview(Long id, String authToken) {
         validateAdminAccess(authToken);
 
@@ -216,15 +150,6 @@ public class CurriculumService implements ICurriculumService {
     }
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(value = CacheConstants.CURRICULUM_BY_ID, key = "#id"),
-            @CacheEvict(value = CacheConstants.CURRICULUMS, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_SCHOOL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_DEPARTMENT, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_BY_ACADEMIC_LEVEL, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUMS_SEARCH, allEntries = true),
-            @CacheEvict(value = CacheConstants.CURRICULUM_STATS, allEntries = true)
-    })
     public CurriculumDto toggleCurriculumStatus(Long id, String authToken) {
         validateAdminAccess(authToken);
 
@@ -237,8 +162,6 @@ public class CurriculumService implements ICurriculumService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheConstants.CURRICULUMS_BY_SCHOOL,
-            key = "@cacheKeyGenerator.generateCurriculumPageableKey('by_school', #pageable, #schoolId)")
     public CurriculumPageResponse getCurriculumsBySchool(Long schoolId, Pageable pageable) {
         findSchoolById(schoolId);
 
@@ -248,8 +171,6 @@ public class CurriculumService implements ICurriculumService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheConstants.CURRICULUMS_BY_DEPARTMENT,
-            key = "@cacheKeyGenerator.generateCurriculumPageableKey('by_department', #pageable, #departmentId)")
     public CurriculumPageResponse getCurriculumsByDepartment(Long departmentId, Pageable pageable) {
         findDepartmentById(departmentId);
 
@@ -259,8 +180,6 @@ public class CurriculumService implements ICurriculumService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheConstants.CURRICULUMS_BY_ACADEMIC_LEVEL,
-            key = "@cacheKeyGenerator.generateCurriculumPageableKey('by_academic_level', #pageable, #academicLevelId)")
     public CurriculumPageResponse getCurriculumsByAcademicLevel(Long academicLevelId, Pageable pageable) {
         findAcademicLevelById(academicLevelId);
 
@@ -269,7 +188,6 @@ public class CurriculumService implements ICurriculumService {
     }
 
     @Override
-    @Cacheable(value = CacheConstants.CURRICULUM_STATS, key = "'all'")
     public CurriculumStatusStats getCurriculumStats() {
         return CurriculumStatusStats.builder()
                 .totalCurriculums(curriculumRepository.count())
@@ -282,8 +200,6 @@ public class CurriculumService implements ICurriculumService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheConstants.CURRICULUMS_EXPIRING_SOON,
-            key = "@cacheKeyGenerator.generateCurriculumExpiringSoonKey(#days)")
     public List<CurriculumDto> getCurriculumsExpiringSoon(int days) {
         LocalDateTime startDate = LocalDateTime.now();
         LocalDateTime endDate = startDate.plusDays(days);
@@ -292,8 +208,7 @@ public class CurriculumService implements ICurriculumService {
         return curriculumMapper.toDtoList(curriculums);
     }
 
-    @Cacheable(value = CacheConstants.CURRICULUM_EXISTS_BY_NAME_DEPT_LEVEL,
-            key = "@cacheKeyGenerator.generateCurriculumExistsKey(#name, #departmentId, #academicLevelId, #excludeId)")
+
     private boolean checkCurriculumExistsByNameDeptLevel(String name, Long departmentId, Long academicLevelId, Long excludeId) {
         if (excludeId != null) {
             return curriculumRepository.existsByNameAndDepartmentIdAndAcademicLevelIdAndIdNot(
@@ -303,8 +218,6 @@ public class CurriculumService implements ICurriculumService {
                 name, departmentId, academicLevelId).isPresent();
     }
 
-    @Cacheable(value = CacheConstants.CURRICULUM_EXISTS_BY_CODE,
-            key = "@cacheKeyGenerator.generateCurriculumCodeExistsKey(#code, #excludeId)")
     private boolean checkCurriculumExistsByCode(String code, Long excludeId) {
         if (excludeId != null) {
             return curriculumRepository.existsByCodeAndIdNot(code, excludeId);

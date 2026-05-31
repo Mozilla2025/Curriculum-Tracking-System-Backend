@@ -4,7 +4,7 @@ import com.mozilla.curriculum_tracking_system.annotation.AdminOnly;
 import com.mozilla.curriculum_tracking_system.dto.user.AssignRoleRequest;
 import com.mozilla.curriculum_tracking_system.dto.user.CreateUserRequest;
 import com.mozilla.curriculum_tracking_system.dto.user.UserResponse;
-import com.mozilla.curriculum_tracking_system.response.ApiResponse;
+import com.mozilla.curriculum_tracking_system.dto.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.user.IUserManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

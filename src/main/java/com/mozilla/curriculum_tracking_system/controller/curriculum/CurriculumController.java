@@ -3,7 +3,7 @@ package com.mozilla.curriculum_tracking_system.controller.curriculum;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CurriculumDto;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CurriculumPageResponse;
 import com.mozilla.curriculum_tracking_system.dto.curriculum.CurriculumSearchCriteria;
-import com.mozilla.curriculum_tracking_system.response.ApiResponse;
+import com.mozilla.curriculum_tracking_system.dto.ApiResponse;
 import com.mozilla.curriculum_tracking_system.service.curriculum.ICurriculumService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
