@@ -44,6 +44,10 @@ spring:
             required: true
           ssl:
             trust: smtp.gmail.com
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
   data:
     redis:
       host: ${REDIS_HOST}
